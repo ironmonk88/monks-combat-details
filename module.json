@@ -1,8 +1,8 @@
 {
-	"name": "monks-little-details",
-	"title": "Monk's Little Details",
-	"description": "Things to tidy up the interface and flow",
-	"version": "1.0.35",
+	"name": "monks-combat-details",
+	"title": "Monk's Combat Details",
+	"description": "Enhancements to the Combat UI, and Qol changes",
+	"version": "1.0.0",
 	"author": "IronMonk, ironmonk88#4075",
 	"socket": true,
 	"languages": [
@@ -23,15 +23,15 @@
 		}
 	],
 	"esmodules": [
-		"monks-little-details.js",
+		"monks-combat-details.js",
 		"settings.js"
 	],
-	"styles": [ "css/monks-little-details.css" ],
+	"styles": [ "css/monks-combat-details.css" ],
 	"packs": [],
-	"url": "https://github.com/ironmonk88/monks-little-details",
-	"download": "https://github.com/ironmonk88/monks-little-details/archive/1.0.35.zip",
-	"manifest": "https://github.com/ironmonk88/monks-little-details/releases/latest/download/module.json",
-	"bugs": "https://github.com/ironmonk88/monks-little-details/issues",
+	"url": "https://github.com/ironmonk88/monks-combat-details",
+	"download": "https://github.com/ironmonk88/monks-combat-details/archive/1.0.0.zip",
+	"manifest": "https://github.com/ironmonk88/monks-combat-details/releases/latest/download/module.json",
+	"bugs": "https://github.com/ironmonk88/monks-combat-details/issues",
 	"allowBugReporter": true,
 	"minimumCoreVersion": "0.8.0",
 	"compatibleCoreVersion": "0.8.8"
