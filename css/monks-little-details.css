@@ -1,0 +1,443 @@
+/*.sidebar-tab .directory-list .directory-item img {
+    object-fit: contain !important;
+}
+
+.filepicker .thumbs-list img {
+    object-fit: contain !important;
+}
+
+.sidebar-tab .directory-list .directory-item.scene {
+    position: relative;
+}
+
+.sidebar-tab .directory-list .directory-item.scene img {
+    flex: 1;
+    object-fit: cover !important;
+}
+
+.sidebar-tab .directory-list .directory-item.scene h4 {
+    position: absolute;
+    width: 100%;
+    text-align: center;
+    text-shadow: 1px 1px 3px #000;
+    color: #f0f0e0;
+}*/
+
+.group-header {
+    font-weight: bold;
+    padding: 8px 20px;
+    background-color: rgba(255, 255, 255, 0.4);
+}
+
+.sidebar-tab .directory-list .subdirectory .folder {
+    border-left: 6px solid transparent;
+    border-color: transparent;
+}
+
+.subdirectory {
+    border-left: none;
+    border-bottom: 4px solid #333;
+    margin-bottom: 0px;
+}
+
+.subdirectory .subdirectory {
+    border-left: 4px solid #333;
+    margin-bottom: 0px;
+}
+
+.directory-item .view-scene {
+    width: 14px;
+    height: 14px;
+    line-height: 14px;
+    font-size: 14px;
+    text-align: center;
+    position: absolute;
+    top: 2px;
+    left: 2px;
+    opacity: 0.8;
+    display: none;
+    text-shadow: 1px 1px 3px #000;
+    color: #f0f0e0;
+    cursor: pointer;
+}
+
+.directory-item:hover .view-scene{
+    display: inline-block;
+}
+
+.directory-item .view-scene:hover{
+    opacity:1;
+}
+
+.control-icon.token-info-icon {
+    min-height: 40px;
+}
+
+.control-icon:not(.token-info-icon){
+    cursor: pointer;
+}
+
+.col.token-info-column-left {
+    justify-content: center;
+    padding-top: 0px !important;
+}
+
+.encounter-cr-row{
+    line-height:25px;
+}
+
+.encounter-cr {
+    display: inline-block;
+    padding: 2px 4px;
+    line-height: 16px;
+    color: #fff;
+    text-shadow: 0 -1px 0 rgba(0,0,0,0.25);
+    white-space: nowrap;
+    vertical-align: top;
+    background-color: #999;
+    -webkit-border-radius: 3px;
+    -moz-border-radius: 3px;
+    border-radius: 3px;
+    height: 25px;
+    flex: 0 0 120px;
+    text-align: center;
+    position: relative;
+    font-size: 16px;
+    font-weight: normal;
+    padding: 4px;
+    margin-left: 4px;
+}
+
+.encounter-cr[rating="easy"] {
+    background-color: #468847;
+}
+.encounter-cr[rating="average"] {
+    background-color: #3a87ad;
+}
+.encounter-cr[rating="challenging"] {
+    background-color: #f89406;
+}
+.encounter-cr[rating="hard"] {
+    background-color: #b94a48;
+}
+.encounter-cr[rating="epic"] {
+    background-color: #333333;
+}
+
+.encounter-cr-rating {
+    /*width: calc(100% - 8px);
+    position: absolute;
+    bottom: 1px;*/
+    line-height: 10px;
+    font-size: 10px;
+    text-align: center;
+}
+
+.background-palette-container {
+    position: absolute;
+    width: 395px;
+    height: 30px;
+    top: 30px;
+    border-radius: 4px;
+    border: 1px solid #7a7971;
+    background: url(../../../ui/parchment.jpg) repeat;
+    padding-top: 4px;
+}
+
+.background-palette {
+    height: 20px;
+    border-radius: 4px;
+    display: inline-block;
+    border: 1px solid #7a7971;
+    cursor: pointer;
+    margin: 0px 2px;
+}
+
+#mldCharacterSound {
+    width: 28px;
+    height: 28px;
+    max-width: 28px;
+    max-height: 28px;
+    border: none;
+    font-size: 18px;
+    line-height: 28px;
+    padding: 0px 3px;
+}
+#mldCharacterSound.loaded {
+    border: 1px solid #ff6400;
+        
+}
+
+.mldCharacterName {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+}
+
+#sidebar.collapsed #sidebar-tabs a:first-child{
+    margin-top:27px;
+}
+
+#sidebar.collapsed #sidebar-tabs a.collapse {
+    position: absolute;
+    top: 0px;
+    left: 10px;
+}
+
+body.system-wfrp4e #sidebar.collapsed #sidebar-tabs a.collapse {
+    top: -135px;
+    left: 90px;
+}
+
+#context-menu li.context-item {
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+}
+
+/*
+.background-size {
+    position: absolute;
+    font-size: 10px;
+    margin-top: -10px !important;
+    margin-right: 5px !important;
+    color: #808080;
+}
+
+.background-size.width {
+    margin-right: 202px !important;
+}*/
+
+/*
+#sidebar-tabs .item.has-message {
+    color: #ff6400;
+}*/
+
+@font-face {
+    font-family: 'WC Rhesus A Bta';
+    src: url('../fonts/WCRhesusABta.woff2') format('woff2');
+    font-weight: normal;
+    font-style: normal;
+    font-display: swap;
+}
+
+#token-hud.monks-little-details .status-effects {
+    /*top: -56px !important;*/
+    width: unset !important;
+    grid-template-columns: 130px 130px 130px 130px !important;
+    font-size: 16px;
+    line-height: 24px;
+    text-align: left;
+    background: rgba(0, 0, 0, 0.8);
+}
+
+body.system-pf2e #token-hud.monks-little-details .status-effects,
+body.illandril-token-hud-scale--hud-button-scale #token-hud.monks-little-details .status-effects {
+    line-height: 36px;
+}
+
+#token-hud.monks-little-details .status-effects .clear-all {
+    position: absolute;
+    bottom: 100%;
+    right: 5px;
+    cursor: pointer;
+    color: #ccc;
+    border-top-right-radius: 4px;
+    border-top-left-radius: 4px;
+    background: #333;
+    padding: 4px 8px;
+    line-height:24px;
+}
+
+#token-hud.monks-little-details .status-effects .clear-all:hover {
+    color: #d2d1d0;
+}
+
+#token-hud.monks-little-details .status-effects .effect-container {
+    cursor: pointer;
+    position: relative;
+    padding: 1px;
+}
+
+#token-hud.monks-little-details .status-effects .effect-container:hover {
+    color: #d2d1d0;
+}
+
+#token-hud.monks-little-details .status-effects .effect-control,
+#token-hud.monks-little-details .status-effects .pf2e-effect-control {
+    width: 100%;
+    height: 24px;
+    margin: 0;
+    margin-top: -1px;
+    border-radius: 4px;
+    border: 1px solid transparent;
+    padding: 0;
+    opacity: 0.5;
+    padding-right: calc(100% - 24px);
+}
+
+body.system-pf2e #token-hud.monks-little-details .status-effects .effect-control,
+body.illandril-token-hud-scale--hud-button-scale #token-hud.monks-little-details .status-effects .effect-control,
+body.system-pf2e #token-hud.monks-little-details .status-effects .pf2e-effect-control {
+    height: 36px;
+    padding-right: calc(100% - 36px);
+}
+
+body.system-pf2e #token-hud.monks-little-details .status-effects .pf2e-effect-control {
+    margin-top: 0px;
+    /*width: calc(100% - 2px);*/
+    margin-left: 1px;
+}
+
+body.system-pf2e #token-hud.monks-little-details .status-effects .pf2e-effect-value {
+    right: calc(100% - 43px);
+}
+
+#token-hud.monks-little-details .status-effects .effect-container:hover .effect-control,
+#token-hud.monks-little-details .status-effects .pf2e-effect-img-container:hover .pf2e-effect-control {
+    opacity: 1;
+}
+
+#token-hud.monks-little-details .status-effects .effect-control.active,
+#token-hud.monks-little-details .status-effects .pf2e-effect-control.active {
+    border: 1px solid #ff6400;
+    opacity: 0.7;
+}
+
+#token-hud.monks-little-details.highlight-image .status-effects .effect-control.active,
+#token-hud.monks-little-details.highlight-image .status-effects .pf2e-effect-control.active {
+    border: 1px solid #fff;
+    filter: sepia(100%) saturate(2000%) hue-rotate(-50deg);
+}
+
+#token-hud.monks-little-details .status-effects .effect-container:hover .effect-control.active,
+#token-hud.monks-little-details .status-effects .pf2e-effect-img-container:hover .pf2e-effect-control.active {
+    color: #ffc163 !important;
+}
+
+#token-hud.monks-little-details .status-effects .effect-name {
+    vertical-align: top;
+    padding-left: 4px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    max-width: calc(100% - 24px);
+    display: inline-block;
+    pointer-events: none;
+    position: absolute;
+    top: 0px;
+    left: 24px;
+    opacity: 0.6;
+    color: #ccc;
+}
+
+body.system-pf2e #token-hud.monks-little-details .status-effects .effect-name,
+body.illandril-token-hud-scale--hud-button-scale #token-hud.monks-little-details .status-effects .effect-name {
+    max-width: calc(100% - 36px);
+    left: 36px;
+}
+
+#token-hud.monks-little-details .status-effects .effect-container:hover .effect-name,
+#token-hud.monks-little-details .status-effects .pf2e-effect-img-container:hover .effect-name {
+    opacity: 1;
+}
+
+#token-hud.monks-little-details .status-effects .effect-control.active + .effect-name,
+#token-hud.monks-little-details .status-effects .pf2e-effect-control.active + .effect-name {
+    color: #ff6400;
+    opacity: 0.8;
+}
+
+#token-hud.monks-little-details .status-effects .effect-container:hover .effect-control.active + .effect-name,
+#token-hud.monks-little-details .status-effects .pf2e-effect-img-container:hover .pf2e-effect-control.active + .effect-name {
+    opacity: 1;
+}
+
+.monks-playlist ol {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+.monks-playlist ol li {
+    position: relative;
+    margin: 5px;
+    padding: 5px 0;
+    border-bottom: 1px solid #444;
+}
+
+.monks-playlist ol li .playing{
+    display:none;
+}
+
+.monks-playlist ol li.playing .playing{
+    display:inline-block;
+}
+
+.play-list-sounds {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    flex:none;
+    margin-left:20px;
+}
+
+.play-list-sounds li {
+    position: relative;
+    margin: 5px;
+    padding: 5px 0;
+    border-bottom: 1px solid #444;
+    line-height: 24px;
+}
+
+#combat #combat-controls{
+    min-height:38px;
+}
+
+.timer-msg .timer-time{
+    text-align:center;
+    font-size:24px;
+}
+
+.timer-msg .timer-bar{
+    width:100%;
+    height:17px;
+    border:1px solid #808080;
+    border-radius:4px;
+    background-color: rgba(0, 0, 0, 0.2);
+    position:relative;
+    overflow:hidden;
+    margin:4px 0px;
+}
+
+.timer-msg .timer-bar div {
+    border-radius: 4px;
+    background: #5d49ff;
+    width: 50%;
+    height: 100%;
+}
+
+.timer-msg .complete-msg{
+    display:none;
+    text-align:center;
+    padding:4px;
+}
+
+.timer-msg.complete .timer-bar{
+    display:none;
+}
+
+.timer-msg.complete .complete-msg {
+    display: block;
+}
+
+.timer-msg .timer-flavor {
+    border-top: 2px groove #FFF;
+    border-bottom: 2px groove #FFF;
+    padding: 4px 0px;
+}
+
+.timer-msg .timer-flavor:empty{
+    border-bottom:none;
+    height:1px;
+}
