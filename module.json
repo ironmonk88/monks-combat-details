@@ -1,7 +1,7 @@
 {
   "title": "Monk's Combat Details",
-  "description": "Enhancements to the Combat UI, and Qol changes",
-  "version": "1.0.0",
+  "description": "A bunch of quality of life improvements to allow your combats to move smoother",
+  "version": "10.1",
   "authors": [
     {
       "name": "IronMonk",
@@ -23,9 +23,29 @@
       "path": "lang/ja.json"
     },
     {
+      "lang": "fr",
+      "name": "French",
+      "path": "lang/fr.json"
+    },
+    {
       "lang": "es",
       "name": "Español",
       "path": "lang/es.json"
+    },
+    {
+      "lang": "it",
+      "name": "Italiano",
+      "path": "lang/it.json"
+    },
+    {
+      "lang": "de",
+      "name": "Deutsch",
+      "path": "lang/de.json"
+    },
+    {
+      "lang": "pt-BR",
+      "name": "Português (Brasil)",
+      "path": "lang/pt-BR.json"
     }
   ],
   "esmodules": [
@@ -36,14 +56,12 @@
     "css/monks-combat-details.css"
   ],
   "url": "https://github.com/ironmonk88/monks-combat-details",
-  "download": "https://github.com/ironmonk88/monks-combat-details/archive/1.0.0.zip",
+  "download": "https://github.com/ironmonk88/monks-combat-details/archive/10.1.zip",
   "manifest": "https://github.com/ironmonk88/monks-combat-details/releases/latest/download/module.json",
   "bugs": "https://github.com/ironmonk88/monks-combat-details/issues",
-  "allowBugReporter": true,
   "id": "monks-combat-details",
   "compatibility": {
     "minimum": "10",
     "verified": "10"
-  },
-  "name": "monks-combat-details"
+  }
 }
