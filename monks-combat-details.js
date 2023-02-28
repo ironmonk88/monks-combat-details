@@ -148,10 +148,10 @@ export class MonksCombatDetails {
 
         game.socket.on(MonksCombatDetails.SOCKET, MonksCombatDetails.onMessage);
 
-        if (!setting("transfer-settings") && game.user.isGM) {
+        if (!setting("transfer-settings") && game.user.isGM && game.modules.get("monks-little-details")?.active) {
             MonksCombatDetails.transferSettings();
         }
-        if (!setting("transfer-settings-client")) {
+        if (!setting("transfer-settings-client") && game.modules.get("monks-little-details")?.active) {
             MonksCombatDetails.transferSettingsClient();
         }
     }
