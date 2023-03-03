@@ -157,10 +157,18 @@ export class MonksCombatDetails {
     }
 
     static async transferSettings() {
+        let swapFilename = function (value, name) {
+            if (value && (name === "next-sound" || name === "turn-sound" || name === "round-sound")) {
+                value = value.replace("monks-little-details", "monks-combat-details");
+            }
+
+            return value;
+        }
         let setSetting = async function (name) {
             let oldChange = game.settings.settings.get(`monks-combat-details.${name}`).onChange;
             game.settings.settings.get(`monks-combat-details.${name}`).onChange = null;
-            await game.settings.set("monks-combat-details", name, game.settings.get("monks-little-details", name));
+            let value = swapFilename(game.settings.get("monks-little-details", name), name);
+            await game.settings.set("monks-combat-details", name, value);
             game.settings.settings.get(`monks-combat-details.${name}`).onChange = oldChange;
         }
 
