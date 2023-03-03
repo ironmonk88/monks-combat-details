@@ -1,6 +1,6 @@
 {
   "title": "Monk's Combat Details",
-  "description": "A bunch of quality of life improvements to allow your combats to move smoother",
+  "description": "A bunch of quality of life things to make running combat a little easier.  Including turn notification, combat automations, combat tracker upgrades, and token status bars specifically for combat.",
   "version": "10.1",
   "authors": [
     {
