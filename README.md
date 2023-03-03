@@ -1,5 +1,5 @@
 # Monk's Combat Details
-A bunch of quality of life things to make running combat a little easier.  Indluding turn notification, combat automations, 
+A bunch of quality of life things to make running combat a little easier.  Including turn notification, combat automations, combat tracker upgrades, and token status bars specifically for combat.
 
 ## Installation
 Simply use the install module screen within the FoundryVTT setup
