@@ -53,9 +53,9 @@
 	"MonksCombatDetails.token-highlight-remove.name": "Clear Token Highlight",
 	"MonksCombatDetails.token-highlight-remove.hint": "Clear token highlighter after the Token is first moved",
 	"MonksCombatDetails.auto-scroll.name": "Auto scroll combat tracker",
-	"MonksCombatDetails.auto-scroll.hint": "Auto scroll combat tracker so that the current combatant is always at the top",
+	"MonksCombatDetails.auto-scroll.hint": "Auto scroll combat tracker so that the current combatant is always visible",
 	"MonksCombatDetails.pan-to-combatant.name": "Pan to Combatant",
-	"MonksCombatDetails.pan-to-combatant.hint": "Pan to the current combatant for the GM",
+	"MonksCombatDetails.pan-to-combatant.hint": "When your turn starts pan to the token you control",
 	"MonksCombatDetails.prevent-initiative.name": "No Combat Without Initiative",
 	"MonksCombatDetails.prevent-initiative.hint": "Prevent combat from starting if not all initiatives have been rolled",
 	"MonksCombatDetails.hide-until-turn.name": "Hide Until Turn",
@@ -72,8 +72,11 @@
 
 	"MonksCombatDetails.PreventTokenMessage": "Once in combat, a token cannot be removed except through the encounter interface.",
 
-	"MonksCombatDetails.CombatTracker": "Combat Tracker",
-	"MonksCombatDetails.CombatTurn": "Combat Turn",
+	"MonksCombatDetails.CombatPreparation": "Combat Preparation",
+	"MonksCombatDetails.CombatDetails": "Combat Details",
+	"MonksCombatDetails.CombatTracker": "Combat Tracker Automation",
+	"MonksCombatDetails.CombatBars": "Combat Status Bars",
+	"MonksCombatDetails.CombatTurn": "Combat Turn Notification",
 
 	"MonksCombatDetails.CombatDisplayBars": "Combat Display Bars:",
 

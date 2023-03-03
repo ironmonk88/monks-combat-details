@@ -567,7 +567,10 @@ Hooks.on("renderSettingsConfig", (app, html, data) => {
     let opencombat = setting("opencombat");
     $('input[name="monks-combat-details.popout-combat"]', html).closest('.form-group').toggle(!game.user.isGM && ['everyone', 'playeronly'].includes(opencombat));
 
-    $('<div>').addClass('form-group group-header').html(i18n("MonksCombatDetails.CombatTracker")).insertBefore($('[name="monks-combat-details.show-combat-cr"]').parents('div.form-group:first'));
+    $('<div>').addClass('form-group group-header').html(i18n("MonksCombatDetails.CombatPreparation")).insertBefore($('[name="monks-combat-details.prevent-initiative"]').parents('div.form-group:first'));
+    $('<div>').addClass('form-group group-header').html(i18n("MonksCombatDetails.CombatDetails")).insertBefore($('[name="monks-combat-details.clear-targets"]').parents('div.form-group:first'));
+    $('<div>').addClass('form-group group-header').html(i18n("MonksCombatDetails.CombatTracker")).insertBefore($('[name="monks-combat-details.switch-combat-tab"]').parents('div.form-group:first'));
+    $('<div>').addClass('form-group group-header').html(i18n("MonksCombatDetails.CombatBars")).insertBefore($('[name="monks-combat-details.add-combat-bars"]').parents('div.form-group:first'));
     $('<div>').addClass('form-group group-header').html(i18n("MonksCombatDetails.CombatTurn")).insertBefore($('[name="monks-combat-details.shownextup"]').parents('div.form-group:first'));
 });
 

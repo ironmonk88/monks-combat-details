@@ -35,7 +35,32 @@ export const registerSettings = function () {
 		'false': i18n("MonksCombatDetails.spelloptions.false")
 	}
 
-	//combat tracker
+	// combat preparation
+	game.settings.register(modulename, "prevent-initiative", {
+		name: i18n("MonksCombatDetails.prevent-initiative.name"),
+		hint: i18n("MonksCombatDetails.prevent-initiative.hint"),
+		scope: "world",
+		config: true,
+		default: true,
+		type: Boolean,
+	});
+	game.settings.register(modulename, "prevent-token-removal", {
+		name: i18n("MonksCombatDetails.prevent-token-removal.name"),
+		hint: i18n("MonksCombatDetails.prevent-token-removal.hint"),
+		scope: "world",
+		config: true,
+		default: true,
+		type: Boolean,
+	});
+	game.settings.register(modulename, "prevent-combat-spells", {
+		name: i18n("MonksCombatDetails.prevent-combat-spells.name"),
+		hint: i18n("MonksCombatDetails.prevent-combat-spells.hint"),
+		scope: "world",
+		config: true,
+		choices: spelloptions,
+		default: true,
+		type: String,
+	});
 	game.settings.register(modulename, "show-combat-cr", {
 		name: i18n("MonksCombatDetails.show-combat-cr.name"),
 		hint: i18n("MonksCombatDetails.show-combat-cr.hint"),
@@ -44,6 +69,61 @@ export const registerSettings = function () {
 		default: game.system.id != "pf2e",
 		type: Boolean,
 	});
+
+	//combat details
+	game.settings.register(modulename, "clear-targets", {
+		name: i18n("MonksCombatDetails.clear-targets.name"),
+		hint: i18n("MonksCombatDetails.clear-targets.hint"),
+		scope: "client",
+		config: true,
+		default: true,
+		type: Boolean
+	});
+	game.settings.register(modulename, "remember-previous", {
+		name: i18n("MonksCombatDetails.remember-previous.name"),
+		hint: i18n("MonksCombatDetails.remember-previous.hint"),
+		scope: "client",
+		config: true,
+		default: true,
+		type: Boolean,
+		onChange: debouncedReload
+	});
+	game.settings.register(modulename, "round-chatmessages", {
+		name: i18n("MonksCombatDetails.round-chatmessages.name"),
+		hint: i18n("MonksCombatDetails.round-chatmessages.hint"),
+		scope: "world",
+		config: true,
+		default: true,
+		type: Boolean
+	});
+	game.settings.register(modulename, "show-start", {
+		name: i18n("MonksCombatDetails.show-start.name"),
+		hint: i18n("MonksCombatDetails.show-start.hint"),
+		scope: "world",
+		config: true,
+		default: true,
+		type: Boolean
+	});
+
+	game.settings.register(modulename, "pan-to-combatant", {
+		name: i18n("MonksCombatDetails.pan-to-combatant.name"),
+		hint: i18n("MonksCombatDetails.pan-to-combatant.hint"),
+		scope: "client",
+		default: false,
+		type: Boolean,
+		config: true
+	});
+
+	game.settings.register(modulename, "select-combatant", {
+		name: i18n("MonksCombatDetails.select-combatant.name"),
+		hint: i18n("MonksCombatDetails.select-combatant.hint"),
+		scope: "client",
+		config: true,
+		default: true,
+		type: Boolean
+	});
+
+	//combat tracker
 	game.settings.register(modulename, "switch-combat-tab", {
 		name: i18n("MonksCombatDetails.switch-combat-tab.name"),
 		hint: i18n("MonksCombatDetails.switch-combat-tab.hint"),
@@ -51,31 +131,6 @@ export const registerSettings = function () {
 		config: true,
 		default: true,
 		type: Boolean
-	});
-	game.settings.register(modulename, "hide-enemies", {
-		name: i18n("MonksCombatDetails.hide-enemies.name"),
-		hint: i18n("MonksCombatDetails.hide-enemies.hint"),
-		scope: "world",
-		config: true,
-		default: false,
-		type: Boolean,
-		onChange: debouncedReload
-	});
-	game.settings.register(modulename, "hide-until-turn", {
-		name: i18n("MonksCombatDetails.hide-until-turn.name"),
-		hint: i18n("MonksCombatDetails.hide-until-turn.hint"),
-		scope: "world",
-		config: true,
-		default: false,
-		type: Boolean,
-	});
-	game.settings.register(modulename, "prevent-initiative", {
-		name: i18n("MonksCombatDetails.prevent-initiative.name"),
-		hint: i18n("MonksCombatDetails.prevent-initiative.hint"),
-		scope: "world",
-		config: true,
-		default: true,
-		type: Boolean,
 	});
 	game.settings.register(modulename, "popout-combat", {
 		name: i18n("MonksCombatDetails.opencombat.name"),
@@ -111,31 +166,22 @@ export const registerSettings = function () {
 		default: true,
 		type: Boolean,
 	});
-	game.settings.register(modulename, "prevent-token-removal", {
-		name: i18n("MonksCombatDetails.prevent-token-removal.name"),
-		hint: i18n("MonksCombatDetails.prevent-token-removal.hint"),
+	game.settings.register(modulename, "hide-enemies", {
+		name: i18n("MonksCombatDetails.hide-enemies.name"),
+		hint: i18n("MonksCombatDetails.hide-enemies.hint"),
 		scope: "world",
 		config: true,
-		default: true,
+		default: false,
 		type: Boolean,
+		onChange: debouncedReload
 	});
-	game.settings.register(modulename, "prevent-combat-spells", {
-		name: i18n("MonksCombatDetails.prevent-combat-spells.name"),
-		hint: i18n("MonksCombatDetails.prevent-combat-spells.hint"),
+	game.settings.register(modulename, "hide-until-turn", {
+		name: i18n("MonksCombatDetails.hide-until-turn.name"),
+		hint: i18n("MonksCombatDetails.hide-until-turn.hint"),
 		scope: "world",
 		config: true,
-		choices: spelloptions,
-		default: true,
-		type: String,
-	});
-	game.settings.register(modulename, "auto-defeated", {
-		name: i18n("MonksCombatDetails.auto-defeated.name"),
-		hint: i18n("MonksCombatDetails.auto-defeated.hint"),
-		scope: "world",
-		config: true,
-		choices: autodefeated,
-		default: (game.system.id == 'D35E' || game.system.id == 'pf1' ? 'npc-negative' : 'npc-zero'),
-		type: String,
+		default: false,
+		type: Boolean,
 	});
 	game.settings.register(modulename, "invisible-dead", {
 		name: i18n("MonksCombatDetails.invisible-dead.name"),
@@ -145,6 +191,16 @@ export const registerSettings = function () {
 		default: false,
 		type: Boolean,
 		onChange: debouncedReload
+	});
+
+	game.settings.register(modulename, "auto-defeated", {
+		name: i18n("MonksCombatDetails.auto-defeated.name"),
+		hint: i18n("MonksCombatDetails.auto-defeated.hint"),
+		scope: "world",
+		config: true,
+		choices: autodefeated,
+		default: (game.system.id == 'D35E' || game.system.id == 'pf1' ? 'npc-negative' : 'npc-zero'),
+		type: String,
 	});
 	game.settings.register(modulename, "auto-reveal", {
 		name: i18n("MonksCombatDetails.auto-reveal.name"),
@@ -164,6 +220,7 @@ export const registerSettings = function () {
 		type: Boolean,
 	});
 
+	// Combat bars
 	game.settings.register(modulename, "add-combat-bars", {
 		name: i18n("MonksCombatDetails.add-combat-bars.name"),
 		hint: i18n("MonksCombatDetails.add-combat-bars.hint"),
@@ -285,57 +342,6 @@ export const registerSettings = function () {
 		default: false,
 		type: Boolean,
 	});*/
-	game.settings.register(modulename, "clear-targets", {
-		name: i18n("MonksCombatDetails.clear-targets.name"),
-		hint: i18n("MonksCombatDetails.clear-targets.hint"),
-		scope: "client",
-		config: true,
-		default: true,
-		type: Boolean
-	});
-	game.settings.register(modulename, "remember-previous", {
-		name: i18n("MonksCombatDetails.remember-previous.name"),
-		hint: i18n("MonksCombatDetails.remember-previous.hint"),
-		scope: "client",
-		config: true,
-		default: true,
-		type: Boolean,
-		onChange: debouncedReload
-	});
-	game.settings.register(modulename, "round-chatmessages", {
-		name: i18n("MonksCombatDetails.round-chatmessages.name"),
-		hint: i18n("MonksCombatDetails.round-chatmessages.hint"),
-		scope: "world",
-		config: true,
-		default: true,
-		type: Boolean
-	});
-	game.settings.register(modulename, "show-start", {
-		name: i18n("MonksCombatDetails.show-start.name"),
-		hint: i18n("MonksCombatDetails.show-start.hint"),
-		scope: "world",
-		config: true,
-		default: true,
-		type: Boolean
-	});
-
-	game.settings.register(modulename, "pan-to-combatant", {
-		name: i18n("MonksCombatDetails.pan-to-combatant.name"),
-		hint: i18n("MonksCombatDetails.pan-to-combatant.hint"),
-		scope: "client",
-		default: false,
-		type: Boolean,
-		config: true
-	});
-
-	game.settings.register(modulename, "select-combatant", {
-		name: i18n("MonksCombatDetails.select-combatant.name"),
-		hint: i18n("MonksCombatDetails.select-combatant.hint"),
-		scope: "client",
-		config: true,
-		default: true,
-		type: Boolean
-	});
 
 	game.settings.register(modulename, "hide-defeated", {
 		scope: "world",
