@@ -85,6 +85,7 @@ export class MonksCombatDetails {
         }
 
         MonksCombatDetails.crChallenge = [
+            { text: "MonksCombatDetails.unknown", rating: 'unknown' },
             { text: (game.system.id == 'pf2e' ? "MonksCombatDetails.trivial" : "MonksCombatDetails.easy"), rating: 'easy' },
             { text: (game.system.id == 'pf2e' ? "MonksCombatDetails.low" : "MonksCombatDetails.average"), rating: 'average' },
             { text: (game.system.id == 'pf2e' ? "MonksCombatDetails.moderate" : "MonksCombatDetails.challenging"), rating: 'challenging' },
@@ -311,7 +312,7 @@ export class MonksCombatDetails {
             }
 
             var partyCR = MonksCombatDetails.xpchart.filter((budget, index) => xp >= budget || index == 0);
-            return { cr: partyCR.length - 1, xp: xp };
+            return { cr: partyCR.length - 1, xp: xp, count: apl.count };
         } else {
             //get the APL of friendly combatants
             for (let combatant of combat.combatants) {
@@ -350,7 +351,7 @@ export class MonksCombatDetails {
             //get the CR of any unfriendly/neutral
             let cr = Math.clamped(MonksCombatDetails.xpchart.findIndex(cr => cr > xp) - 1, 0, MonksCombatDetails.xpchart.length - 1);
 
-            return { cr: cr, apl: calcAPL };
+            return { cr: cr, apl: calcAPL, count: apl.count };
         }
     }
 
@@ -414,9 +415,30 @@ export class MonksCombatDetails {
     }
 
     static isDefeated(token) {
-        return (token && (token.combatant && token.combatant.defeated) || token.actor?.effects.find(e => e.getFlag("core", "statusId") === CONFIG.specialStatusEffects.DEFEATED) || token.document.overlayEffect == CONFIG.controlIcons.defeated);
+        return (token && (token.combatant && token.combatant.defeated) || token.actor?.statuses.has(CONFIG.specialStatusEffects.DEFEATED) || token.document.overlayEffect == CONFIG.controlIcons.defeated);
     }
 
+    static async AutoDefeated(hp, actor, token) {
+        if (setting('auto-defeated') != 'none' && game.user.isGM) {
+            if (hp != undefined && (setting('auto-defeated').startsWith('all') || token.disposition != 1)) {
+                let combatant = token.combatant;
+
+                //check to see if the combatant has been defeated
+                let defeated = (setting('auto-defeated').endsWith('negative') ? hp < 0 : hp == 0);
+                if (combatant != undefined && combatant.defeated != defeated) {
+                    await combatant.update({ defeated: defeated });
+                }
+
+                if (defeated && setting("invisible-dead")) {
+                    token.update({ "hidden": true });
+                }
+            }
+        }
+
+        if (token && hp != undefined) {
+            token._object?.refresh();
+        }
+    }
 }
 
 Hooks.once('init', MonksCombatDetails.init);
@@ -502,16 +524,17 @@ Hooks.on('renderCombatTracker', async (app, html, data) => {
         let crdata = MonksCombatDetails.getCR(data.combat);
 
         if ($('#combat-round .encounter-cr-row').length == 0 && data.combat.combatants.size > 0) {
-            let crChallenge = '';
+            let crChallenge = MonksCombatDetails.crChallenge[0];
             let epicness = '';
             let crText = '';
             if (game.system.id == 'pf2e') {
-                crChallenge = MonksCombatDetails.crChallenge[Math.clamped(crdata.cr, 0, MonksCombatDetails.crChallenge.length - 1)];
+                crChallenge = MonksCombatDetails.crChallenge[Math.clamped(crdata.cr, 1, MonksCombatDetails.crChallenge.length - 1)];
                 crText = 'XP Bud.: ' + crdata.xp;
             }
             else {
-                crChallenge = MonksCombatDetails.crChallenge[Math.clamped(crdata.cr - crdata.apl, -1, 3) + 1];
-                epicness = Math.clamped((crdata.cr - crdata.apl - 3), 0, 5);
+                if (crdata.count > 0)
+                    crChallenge = MonksCombatDetails.crChallenge[Math.clamped(crdata.cr - crdata.apl, 0, MonksCombatDetails.crChallenge.length - 1)];
+                epicness = crChallenge.rating == "unknown" ? 0 : Math.clamped((crdata.cr - crdata.apl - 3), 0, 5);
                 crText = 'CR: ' + MonksCombatDetails.getCRText(crdata.cr);
             }
 
@@ -582,45 +605,18 @@ Hooks.on("renderSettingsConfig", (app, html, data) => {
     $('<div>').addClass('form-group group-header').html(i18n("MonksCombatDetails.CombatTurn")).insertBefore($('[name="monks-combat-details.shownextup"]').parents('div.form-group:first'));
 });
 
-Hooks.on("preUpdateToken", async function (document, data, options, userid) {
-    let hp = getProperty(data, 'actorData.system.attributes.hp.value');
-    let token = document.object;
-
-    if (setting('auto-defeated') != 'none' && game.user.isGM) {
-        if (hp != undefined && (setting('auto-defeated').startsWith('all') || document.disposition != 1)) {
-            let combatant = document.combatant;
-
-            //check to see if the combatant has been defeated
-            let defeated = (setting('auto-defeated').endsWith('negative') ? hp < 0 : hp == 0);
-            if (combatant != undefined && combatant.defeated != defeated) {
-                await combatant.update({ defeated: defeated });
-            }
-
-            if (defeated && setting("invisible-dead")) {
-                data.hidden = true;
-            }
-        }
-    }
-
-    if (hp != undefined) {
-        token.refresh();
-    }
+Hooks.on("preUpdateActor", async function (document, data, options, userid) {
+    let hp = getProperty(data, 'system.attributes.hp.value');
+    MonksCombatDetails.AutoDefeated(hp, document, document.token);
 });
 
 Hooks.on("updateToken", async function (document, data, options, userid) {
-    let hp = getProperty(data, 'actorData.system.attributes.hp.value');
-    let token = document.object;
-
-    if (hp != undefined) {
-        token.refresh();
-    }
-
     if (setting('auto-reveal') && game.user.isGM && data.hidden === false) {
         let combatant = document.combatant;
 
         if (combatant?.hidden === true) {
             await combatant.update({ hidden: false }).then(() => {
-                token.refresh();
+                document._object?.refresh();
             });
         }
     }
@@ -636,7 +632,7 @@ Hooks.on("updateCombatant", async function (combatant, data, options, userId) {
 
         let status = CONFIG.statusEffects.find(e => e.id === CONFIG.specialStatusEffects.DEFEATED);
         let effect = a && status ? status : CONFIG.controlIcons.defeated;
-        const exists = (effect.icon == undefined ? (t.overlayEffect == effect) : (a.effects.find(e => e.getFlag("core", "statusId") === effect.id) != undefined));
+        const exists = (effect.icon == undefined ? (t.overlayEffect == effect) : (a.statuses.has(effect.id)));
         if (exists != data.defeated) {
             await t.object.toggleEffect(effect, { overlay: true, active: data.defeated });
             t.object.refresh();
@@ -667,7 +663,7 @@ Hooks.on("preUpdateItem", (item, data, options, user) => {
                 delete data.system.preparation.prepared;
                 if (Object.keys(data.system.preparation).length == 0) delete data.system.preparation;
                 if (Object.keys(data.system).length == 0) delete data.system;
-                if (Object.keys(data).length == 0) return false;
+                if (Object.keys(data).length == 0 || (Object.keys(data).length == 1 && Object.keys(data)[0] == "_id")) return false;
             } else if (setting("prevent-combat-spells") == "true") {
                 MonksCombatDetails.emit('spellChange', { user: game.user.id, actor: item.actor.id, name: item.name });
             }

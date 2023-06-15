@@ -116,7 +116,7 @@ export class CombatTurn {
                         let token = canvas.tokens.get(id);
                         if (token
                             && !token.hidden
-                            && !((token?.combatant && token?.combatant.defeated) || token.actor?.effects.find(e => e.getFlag("core", "statusId") === CONFIG.specialStatusEffects.DEFEATED) || token.document.overlayEffect == CONFIG.controlIcons.defeated))
+                            && !((token?.combatant && token?.combatant.defeated) || token.actor?.statuses.has(CONFIG.specialStatusEffects.DEFEATED) || token.document.overlayEffect == CONFIG.controlIcons.defeated))
                             token.setTarget(true, { user: game.user, releaseOthers: false, groupSelection: false });
                     }
 
@@ -198,7 +198,7 @@ export class CombatTurn {
                 && !MonksCombatDetails.isDefeated(document._object))
             {
                 let shadow = CombatTurn.shadows[document.id];
-                if (document.x == shadow._startX && document.y == shadow._startY) {
+                if (shadow && document.x == shadow._startX && document.y == shadow._startY) {
                     CombatTurn.removeShadow(document.id);
                     MonksCombatDetails.emit('removeShadow', { id: document.id });
                 }
@@ -207,10 +207,12 @@ export class CombatTurn {
 
         Hooks.on("sightRefresh", function () {
             for (let [id, shadow] of Object.entries(CombatTurn.shadows)) {
-                let token = canvas.tokens.get(id);
-                if (token) {
-                    const tolerance = Math.min(token.w, token.h) / 4;
-                    shadow.visible = canvas.effects.visibility.testVisibility({ x: shadow.x, y: shadow.y }, { tolerance, object: token });
+                if (shadow) {
+                    let token = canvas.tokens.get(id);
+                    if (token) {
+                        const tolerance = Math.min(token.w, token.h) / 4;
+                        shadow.visible = canvas.effects.visibility.testVisibility({ x: shadow.x, y: shadow.y }, { tolerance, object: token });
+                    }
                 }
             }
         });
@@ -324,7 +326,7 @@ export class CombatTurn {
                     for (let [i, t] of combat.turns.entries()) {
                         if (i <= from ||
                             t.defeated ||
-                            t.actor?.effects.find(e => e.getFlag("core", "statusId") === CONFIG.specialStatusEffects.DEFEATED)) continue;
+                            t.actor?.statuses.has(CONFIG.specialStatusEffects.DEFEATED)) continue;
                         next = i;
                         break;
                     }

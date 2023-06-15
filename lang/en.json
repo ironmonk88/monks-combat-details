@@ -80,6 +80,7 @@
 
 	"MonksCombatDetails.CombatDisplayBars": "Combat Display Bars:",
 
+	"MonksCombatDetails.unknown": "-",
 	"MonksCombatDetails.easy": "Easy",
 	"MonksCombatDetails.average": "Average",
 	"MonksCombatDetails.challenging": "Challenging",

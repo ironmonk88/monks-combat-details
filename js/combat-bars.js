@@ -30,9 +30,10 @@ export class CombatBars {
 
             let value = (app.object instanceof TokenDocument ? app.object.getFlag('monks-combat-details', 'displayBarsCombat') : getProperty(app.object.token, "flags.monks-combat-details.displayBarsCombat"));
 
-            $('[name="displayBars"]', combatBars).attr('name', 'flags.monks-licombatttle-details.displayBarsCombat').prepend($('<option>').attr('value', '-1').html('')).val(value);
+            $('[name="displayBars"]', combatBars).attr('name', 'flags.monks-combat-details.displayBarsCombat').prepend($('<option>').attr('value', '-1').html('')).val(value);
             $('> label', combatBars).html(i18n("MonksCombatDetails.CombatDisplayBars"));
             combatBars.insertAfter(displayBars);
+            app.setPosition({ height: 'auto' });
         });
 
         Hooks.on("deleteCombat", function (combat) {
