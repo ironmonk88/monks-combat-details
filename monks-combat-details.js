@@ -1,7 +1,7 @@
 ﻿import { registerSettings } from "./settings.js";
-import { WithMonksCombatTracker } from "./apps/combattracker.js";
 import { CombatBars } from "./js/combat-bars.js";
 import { CombatTurn } from "./js/combat-turn.js";
+import { PlaceholderCombatant } from "./js/placeholder.js";
 
 export let debugEnabled = 0;
 
@@ -97,10 +97,12 @@ export class MonksCombatDetails {
 
         CombatTurn.init();
 
-        CONFIG.ui.combat = WithMonksCombatTracker(CONFIG.ui.combat);
+        //CONFIG.ui.combat = WithMonksCombatTracker(CONFIG.ui.combat);
 
         if (setting('add-combat-bars'))
             CombatBars.init();
+        if (setting("enable-placeholders"))
+            PlaceholderCombatant.init();
 
         patchFunc("CombatTrackerConfig.prototype._updateObject", async (wrapped, ...args) => {
             let [event, formData] = args;
@@ -112,12 +114,19 @@ export class MonksCombatDetails {
         let combatStart = async function (wrapped, ...args) {
             if (setting("prevent-initiative") && this.turns.find(c => c.initiative == undefined) != undefined) {
                 return await Dialog.confirm({
-                    title: "Not all Initiative have been rolled",
-                    content: `<p>There are combatants that havn't rolled their initiative.<br/>Do you wish to continue with starting the combat?</p>`,
-                    yes: () => { return wrapped.call(this); }
+                    title: i18n("MonksCombatDetails.NotAllInitTitle"),
+                    content: i18n("MonksCombatDetails.NotAllInitContent"),
+                    yes: () => {
+                        if (ui.sidebar.activeTab == "combat")
+                            ui.sidebar.activateTab("chat");
+                        return wrapped.call(this);
+                    }
                 })
-            } else 
+            } else {
+                if (ui.sidebar.activeTab == "combat")
+                    ui.sidebar.activateTab("chat");
                 return wrapped.call(this);
+            }
         }
 
         if (game.modules.get("lib-wrapper")?.active) {
@@ -141,12 +150,28 @@ export class MonksCombatDetails {
                 }
             }
         }
+
+        Object.defineProperty(Combatant.prototype, "visible", {
+            get: function visible() {
+                if (this.hidden) return this.isOwner;
+                if (setting('hide-enemies') || setting("hide-until-turn")) {
+                    if (this.combat && !game.user.isGM) {
+                        let idx = this.combat.turns.findIndex(t => t.id == this.id);
+                        return this.hasPlayerOwner || (this.combat.started && (this.combat.round > 1 || !setting("hide-until-turn") || this.combat.turn >= idx));
+                    }
+                }
+                return true;
+            }
+        });
+
+        patchFunc("CombatTracker.prototype.getData", async (wrapped, ...args) => {
+            if (this.popOut)
+                args[0].resizable = true;
+            return wrapped(...args);
+        });
     }
 
     static async ready() {
-        CombatTurn.ready();
-        CombatTurn.checkCombatTurn(game.combats.active);
-
         game.socket.on(MonksCombatDetails.SOCKET, MonksCombatDetails.onMessage);
 
         if (!setting("transfer-settings") && game.user.isGM && game.modules.get("monks-little-details")?.active) {
@@ -155,6 +180,10 @@ export class MonksCombatDetails {
         if (!setting("transfer-settings-client") && game.modules.get("monks-little-details")?.active) {
             MonksCombatDetails.transferSettingsClient();
         }
+
+        CombatTurn.ready();
+        CombatTurn.checkCombatTurn(game.combats.active);
+        MonksCombatDetails.checkPopout(game.combats.active);
     }
 
     static async transferSettings() {
@@ -356,7 +385,8 @@ export class MonksCombatDetails {
     }
 
     static checkPopout(combat, delta) {
-        let combatStarted = (combat && combat.started === true && ((delta.round === 1 && combat.turn === 0 ) || delta.bypass));
+        let combatCreated = (combat && combat.started !== true && setting("popout-when") == "created");
+        let combatStarted = (combat && combat.started === true && setting("popout-when") == "starts" && ((delta?.round === 1 && delta.turn === 0 ) || delta?.bypass || delta == undefined));
 
         //log("update combat", combat);
         let opencombat = setting("opencombat");
@@ -364,16 +394,13 @@ export class MonksCombatDetails {
         //popout combat (if gm and opencombat is everyone or gm only), (if player and opencombat is everyone or players only and popout-combat)
         if (((game.user.isGM && ['everyone', 'gmonly'].includes(opencombat)) ||
             (!game.user.isGM && ['everyone', 'playersonly'].includes(opencombat) && game.settings.get("monks-combat-details", "popout-combat")))
-            && combatStarted) {
+            && (combatStarted || combatCreated)) {
             //new combat, pop it out
             const tabApp = ui["combat"];
             tabApp.renderPopout(tabApp);
-
-            if (ui.sidebar.activeTab !== "chat")
-                ui.sidebar.activateTab("chat");
         }
 
-        if (combatposition() !== '' && delta.active === true) {
+        if (combatposition() !== '' && delta?.active === true) {
             //+++ make sure if it's not this players turn and it's not the GM to add padding for the button at the bottom
             MonksCombatDetails.tracker = false;   //delete this so that the next render will reposition the popout, changing between combats changes the height
         }
@@ -391,7 +418,7 @@ export class MonksCombatDetails {
 
     static async showShadows(data) {
         fromUuid(data.uuid).then((token) => {
-            if (token && (token.isOwner || game.user.isGM)) {
+            if (token && (token.isOwner || game.user.isGM) && CombatTurn.shadows[document.id] == undefined) {
                 CombatTurn.showShadow(token.object, data.x, data.y);
             }
         });
@@ -420,8 +447,8 @@ export class MonksCombatDetails {
 
     static async AutoDefeated(hp, actor, token) {
         if (setting('auto-defeated') != 'none' && game.user.isGM) {
-            if (hp != undefined && (setting('auto-defeated').startsWith('all') || token.disposition != 1)) {
-                let combatant = token.combatant;
+            if (hp != undefined && (setting('auto-defeated').startsWith('all') || token?.disposition != 1)) {
+                let combatant = token?.combatant;
 
                 //check to see if the combatant has been defeated
                 let defeated = (setting('auto-defeated').endsWith('negative') ? hp < 0 : hp == 0);
@@ -443,11 +470,17 @@ export class MonksCombatDetails {
 
 Hooks.once('init', MonksCombatDetails.init);
 Hooks.on("ready", MonksCombatDetails.ready);
+Hooks.once('setup', () => {
+    game.settings.settings.get("monks-combat-details.nextup-message").default = i18n("MonksCombatDetails.Next");
+    game.settings.settings.get("monks-combat-details.turn-message").default = i18n("MonksCombatDetails.Turn");
+});
 
 Hooks.on("createCombat", function (data, delta) {
     //when combat is created, switch to combat tab
     if (game.user.isGM && setting("switch-combat-tab") && ui.sidebar.activeTab !== "combat")
         ui.sidebar.activateTab("combat");
+
+    MonksCombatDetails.checkPopout(combat);
 });
 
 Hooks.on("deleteCombat", function (combat) {
@@ -502,9 +535,11 @@ Hooks.on("updateCombat", async function (combat, delta) {
     }*/
 });
 
+/*
 Hooks.on("createCombatant", async function (combatant, delta, userId) {
     MonksCombatDetails.checkPopout(combatant.combat, {active: true, bypass: true});
 });
+*/
 
 Hooks.on('closeCombatTracker', async (app, html) => {
     MonksCombatDetails.tracker = false;
@@ -517,6 +552,12 @@ Hooks.on('renderCombatTracker', async (app, html, data) => {
         if (combatposition() !== '') {
             MonksCombatDetails.repositionCombat(app);
         }
+    }
+
+    if (app.popOut) {
+        $(html).toggleClass("hide-defeated", setting("hide-defeated") == true);
+        app.options.height = "";
+        new Draggable(app, html, false, { resizeX: false });
     }
 
     if (!app.popOut && game.user.isGM && data.combat && !data.combat.started && setting('show-combat-cr') && MonksCombatDetails.xpchart != undefined) {
@@ -548,10 +589,6 @@ Hooks.on('renderCombatTracker', async (app, html, data) => {
     //don't show the previous or next turn if this isn't the GM
     if (!game.user.isGM && data.combat && data.combat.started) {
         $('.combat-control[data-control="previousTurn"],.combat-control[data-control="nextTurn"]:last').css({visibility:'hidden'});
-    }
-
-    if (app.options.popOut) {
-        $(app.element).toggleClass("hide-defeated", setting("hide-defeated") == true);
     }
 });
 
@@ -607,6 +644,8 @@ Hooks.on("renderSettingsConfig", (app, html, data) => {
 
 Hooks.on("preUpdateActor", async function (document, data, options, userid) {
     let hp = getProperty(data, 'system.attributes.hp.value');
+    if (game.system.id == "cyberpunk-red-core")
+        hp = getProperty(data, 'system.derivedStats.hp.value');
     MonksCombatDetails.AutoDefeated(hp, document, document.token);
 });
 
@@ -628,11 +667,11 @@ Hooks.on("updateCombatant", async function (combatant, data, options, userId) {
     const combat = combatant.parent;
     if (combat && combat.started && data.defeated != undefined && setting('auto-defeated') != 'none' && game.user.isGM) {
         let t = combatant.token
-        const a = combatant.token.actor;
+        const a = combatant.token?.actor;
 
         let status = CONFIG.statusEffects.find(e => e.id === CONFIG.specialStatusEffects.DEFEATED);
         let effect = a && status ? status : CONFIG.controlIcons.defeated;
-        const exists = (effect.icon == undefined ? (t.overlayEffect == effect) : (a.statuses.has(effect.id)));
+        const exists = (effect.icon == undefined ? (t.overlayEffect == effect) : (a?.statuses.has(effect.id)));
         if (exists != data.defeated) {
             await t.object.toggleEffect(effect, { overlay: true, active: data.defeated });
             t.object.refresh();
@@ -642,9 +681,9 @@ Hooks.on("updateCombatant", async function (combatant, data, options, userId) {
 
 Hooks.on("renderCombatTrackerConfig", (app, html, data) => {
     $('<div>').addClass("form-group")
-        .append($('<label>').html("Hide Defeated?"))
+        .append($('<label>').html(i18n("MonksCombatDetails.HideDefeated")))
         .append($('<input>').attr("type", "checkbox").attr("name", "hideDefeated").attr('data-dtype', 'Boolean').prop("checked", setting("hide-defeated") == true))
-        .append($('<p>').addClass("notes").html("Automatically hide combatants marked as defeated?  Requires skip defeated."))
+        .append($('<p>').addClass("notes").html(i18n("MonksCombatDetails.HideDefeatedHint")))
         .insertAfter($('input[name="skipDefeated"]', html).closest(".form-group"));
 
     app.setPosition({ height: 'auto' });
@@ -659,7 +698,7 @@ Hooks.on("preUpdateItem", (item, data, options, user) => {
 
         if (inCombat) {
             if (setting("prevent-combat-spells") == "prevent") {
-                ui.notifications.warn("Cannot change prepared spells while in combat");
+                ui.notifications.warn(i18n("MonksCombatDetails.CantChangeSpells"));
                 delete data.system.preparation.prepared;
                 if (Object.keys(data.system.preparation).length == 0) delete data.system.preparation;
                 if (Object.keys(data.system).length == 0) delete data.system;
@@ -669,4 +708,45 @@ Hooks.on("preUpdateItem", (item, data, options, user) => {
             }
         }
     }
+});
+
+Hooks.on("getCombatTrackerEntryContext", (html, menu) => {
+    menu.unshift({
+        name: i18n("MonksCombatDetails.SetCurrentCombatant"),
+        icon: '<i class="fas fa-list-timeline"></i>',
+        condition: li => {
+            return game.combats.viewed.combatant.id != li.data("combatant-id");
+        },
+        callback: li => {
+            const combatant = game.combats.viewed.combatants.get(li.data("combatant-id"));
+            if (combatant) {
+                Dialog.confirm({
+                    title: i18n("MonksCombatDetails.SetCombatantPositionTitle"),
+                    content: i18n("MonksCombatDetails.SetCombatantPositionContent"),
+                    yes: () => {
+                        let idx = game.combats.viewed.turns.findIndex(c => c.id == combatant.id);
+                        const updateData = { turn: idx };
+                        Hooks.callAll("combatTurn", this, updateData, {});
+                        return game.combats.viewed.update(updateData);
+                    }
+                });
+            }
+        }
+    });
+
+    menu.unshift({
+        name: i18n("MonksCombatDetails.Target"),
+        icon: '<i class="fas fa-crosshairs"></i>',
+        condition: li => {
+            let combatant = game.combats.viewed.combatants.get(li.data("combatant-id"));
+            return combatant && !combatant.getFlag("monks-combat-details", "placeholder");
+        },
+        callback: li => {
+            const combatant = game.combats.viewed.combatants.get(li.data("combatant-id"));
+            if (combatant?.token?._object) {
+                const targeted = !combatant.token._object.isTargeted;
+                combatant.token._object.setTarget(targeted, { releaseOthers: false });
+            }
+        }
+    });
 });

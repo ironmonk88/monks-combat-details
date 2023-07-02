@@ -159,3 +159,10 @@ body.dark-theme.system-sw5e #chat-log .message.round-marker .message-header .fla
 .combat-sidebar.hide-defeated li.combatant.defeated {
     display: none;
 }
+
+#combat .add-placeholder {
+    margin: 0;
+    border-top: 2px groove var(--color-border-dark-4);
+    padding-top: 4px;
+    text-align: center;
+}

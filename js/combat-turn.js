@@ -33,6 +33,7 @@ export class CombatTurn {
             }
         }
 
+        /*
         Hooks.on("deleteCombatant", function (combatant, data, userId) {
             let combat = combatant.parent;
             CombatTurn.checkCombatTurn(combat);
@@ -44,10 +45,11 @@ export class CombatTurn {
             if (combatant.actor?.isOwner == true)
                 CombatTurn.checkCombatTurn(combat);
         });
+        */
 
         Hooks.on("deleteCombat", function (combat) {
             if (setting('round-chatmessages') && combat && game.user.isTheGM && combat.started) {
-                ChatMessage.create({ user: game.user, flavor: "Round End" }, { roundmarker: true });
+                ChatMessage.create({ user: game.user, flavor: i18n("MonksCombatDetails.RoundEnd") }, { roundmarker: true });
             }
 
             if (combat && combat.started && setting('show-start')) {
@@ -136,9 +138,9 @@ export class CombatTurn {
 
             if (setting('round-chatmessages') && combat && game.user.isTheGM) {
                 if (combatStarted) {
-                    ChatMessage.create({ user: game.user, flavor: "Round Start" }, { roundmarker: true });
+                    ChatMessage.create({ user: game.user, flavor: i18n("MonksCombatDetails.RoundStart") }, { roundmarker: true });
                 } else if (Object.keys(delta).some((k) => k === "round")) {
-                    await ChatMessage.create({ user: game.user, flavor: `Round ${delta.round}` }, { roundmarker: true });
+                    await ChatMessage.create({ user: game.user, flavor: `${i18n("MonksCombatDetails.Round")} ${delta.round}` }, { roundmarker: true });
                 }
             }
 
@@ -161,7 +163,7 @@ export class CombatTurn {
         Hooks.on("updateCombatant", async function (combatant, data, options, userId) {
             const combat = combatant.parent;
 
-            if (combat && combat.started && combatant.actor.isOwner && data.defeated != undefined) {
+            if (combat && combat.started && combatant.actor?.isOwner && data.defeated != undefined) {
                 CombatTurn.checkCombatTurn(combat);
             }
         });
@@ -182,10 +184,11 @@ export class CombatTurn {
             if (setting('show-start') && 
                 document.combatant?.combat?.started && 
                 (update.x != undefined || update.y != undefined) && 
-                CombatTurn.shadows[document.id] == undefined && 
                 !MonksCombatDetails.isDefeated(document._object))
             {
-                CombatTurn.showShadow(document.object, document.object.x, document.object.y);
+                if (CombatTurn.shadows[document.id] == undefined)
+                    CombatTurn.showShadow(document.object, document.object.x, document.object.y);
+                
                 MonksCombatDetails.emit('showShadows', { uuid: document.uuid, x: document.object.x, y: document.object.y });
             }
         })
@@ -210,8 +213,7 @@ export class CombatTurn {
                 if (shadow) {
                     let token = canvas.tokens.get(id);
                     if (token) {
-                        const tolerance = Math.min(token.w, token.h) / 4;
-                        shadow.visible = canvas.effects.visibility.testVisibility({ x: shadow.x, y: shadow.y }, { tolerance, object: token });
+                        shadow.visible = game.user.isGM || token.isOwner;
                     }
                 }
             }
@@ -220,10 +222,10 @@ export class CombatTurn {
 
     static async showShadow(token, x, y) {
         //create a shadow
-        if (token.hidden && !game.user.isGM) return;
+        if (token.document.hidden && !game.user.isGM) return;
 
         let shadow = new PIXI.Container();
-        canvas.tiles.addChild(shadow);
+        canvas.grid.shadows.addChild(shadow);
         let colorMatrix = new PIXI.filters.ColorMatrixFilter();
         colorMatrix.sepia(0.6);
         shadow.filters = [colorMatrix];
@@ -254,7 +256,7 @@ export class CombatTurn {
         shadow._startX = x;
         shadow._startY = y;
 
-        shadow.visible = token.isVisible;
+        shadow.visible = game.user.isGM || token.isOwner;
 
         CombatTurn.shadows[token.id] = shadow;
     }
@@ -270,22 +272,23 @@ export class CombatTurn {
     }
 
     static removeShadow(id) {
-        canvas.tiles.removeChild(CombatTurn.shadows[id]);
+        CombatTurn.shadows[id].destroy();
+        delete CombatTurn.shadows[id];
     }
 
     static clearShadows() {
         for (let shadow of Object.values(CombatTurn.shadows))
-            canvas.tiles.removeChild(shadow);
+            shadow.destroy();
         CombatTurn.shadows = {};
     }
 
     static doDisplayTurn() {
         if (setting("showcurrentup") && !game.user.isGM) {
             if (setting("large-print")) {
-                $('#your-turn').addClass("current").removeClass("next").html(i18n("MonksCombatDetails.Turn")).addClass("show");
+                $('#your-turn').addClass("current").removeClass("next").html(setting("turn-message")).addClass("show");
                 window.setTimeout(() => { $("#your-turn").removeClass("show current"); }, 2000);
             } else
-                ui.notifications.warn(i18n("MonksCombatDetails.Turn"));
+                ui.notifications.warn(setting("turn-message"));
         } 
 
         // play a sound
@@ -299,10 +302,10 @@ export class CombatTurn {
     static doDisplayNext() {
         if (setting("shownextup") && !game.user.isGM) {
             if (setting("large-print")) {
-                $('#your-turn').addClass("next").removeClass("current").html(i18n("MonksCombatDetails.Next")).addClass("show");
+                $('#your-turn').addClass("next").removeClass("current").html(setting("nextup-message")).addClass("show");
                 window.setTimeout(() => { $("#your-turn").removeClass("show next"); }, 2000);
             } else 
-                ui.notifications.info(i18n("MonksCombatDetails.Next"));
+                ui.notifications.info(setting("nextup-message"));
         }
         // play a sound
         if (setting('play-next-sound') && setting('next-sound') != '') { //volume() > 0 && !setting("disablesounds") && 
@@ -408,3 +411,7 @@ export class CombatTurn {
         return CombatTurn.sounds[turn];
     }
 }
+
+Hooks.on("drawGridLayer", function (layer) {
+    layer.shadows = layer.addChildAt(new PIXI.Container(), layer.getChildIndex(layer.borders));
+});

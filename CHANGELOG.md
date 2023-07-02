@@ -1,3 +1,23 @@
+# version 11.02
+
+Added the option to right click and set a combatant to the current combatant.
+
+Added the option to set your own up next and your turn message.
+
+Fixed issue when a combatant doesn't link to an actor.
+
+Fixed issues with start turn icon not showing properly, and causing issues with other modules.
+
+Moving the start icon to the grid layer rather than the tile layer.
+
+Added the option to add placeholder combatants.
+
+Added the option to popout the combat tracker when a combat is created.
+
+Popout the combat tracker on a reload if there's an active combat and it's set to popout.
+
+Fixed issues with combatant disposition.
+
 # version 11.01
 
 Added support for v11

@@ -4,8 +4,6 @@ export const registerSettings = function () {
     // Register any custom module settings here
 	let modulename = "monks-combat-details";
 
-	const debouncedReload = foundry.utils.debounce(function () { window.location.reload(); }, 500);
-	
 	let dialogpositions = {
 		'': '—',
 		'topleft': 'Top Left',
@@ -35,6 +33,11 @@ export const registerSettings = function () {
 		'false': i18n("MonksCombatDetails.spelloptions.false")
 	}
 
+	let popoutoptions = {
+		'created': i18n("MonksCombatDetails.CombatCreated"),
+		'starts': i18n("MonksCombatDetails.CombatStarts"),
+    }
+
 	// combat preparation
 	game.settings.register(modulename, "prevent-initiative", {
 		name: i18n("MonksCombatDetails.prevent-initiative.name"),
@@ -61,6 +64,14 @@ export const registerSettings = function () {
 		default: true,
 		type: String,
 	});
+	game.settings.register(modulename, "enable-placeholders", {
+		name: i18n("MonksCombatDetails.enable-placeholders.name"),
+		hint: i18n("MonksCombatDetails.enable-placeholders.hint"),
+		scope: "world",
+		config: true,
+		default: true,
+		type: Boolean,
+	});
 	game.settings.register(modulename, "show-combat-cr", {
 		name: i18n("MonksCombatDetails.show-combat-cr.name"),
 		hint: i18n("MonksCombatDetails.show-combat-cr.hint"),
@@ -86,7 +97,7 @@ export const registerSettings = function () {
 		config: true,
 		default: true,
 		type: Boolean,
-		onChange: debouncedReload
+		requiresReload: true
 	});
 	game.settings.register(modulename, "round-chatmessages", {
 		name: i18n("MonksCombatDetails.round-chatmessages.name"),
@@ -140,6 +151,15 @@ export const registerSettings = function () {
 		default: true,
 		type: Boolean
 	});
+	game.settings.register(modulename, "popout-when", {
+		name: i18n("MonksCombatDetails.popout-when.name"),
+		hint: i18n("MonksCombatDetails.popout-when.hint"),
+		scope: "world",
+		config: true,
+		choices: popoutoptions,
+		default: "starts",
+		type: String
+	});
 	game.settings.register(modulename, "opencombat", {
 		name: i18n("MonksCombatDetails.opencombat.name"),
 		hint: i18n("MonksCombatDetails.opencombat.hint"),
@@ -173,7 +193,7 @@ export const registerSettings = function () {
 		config: true,
 		default: false,
 		type: Boolean,
-		onChange: debouncedReload
+		requiresReload: true
 	});
 	game.settings.register(modulename, "hide-until-turn", {
 		name: i18n("MonksCombatDetails.hide-until-turn.name"),
@@ -190,7 +210,7 @@ export const registerSettings = function () {
 		config: true,
 		default: false,
 		type: Boolean,
-		onChange: debouncedReload
+		requiresReload: true
 	});
 
 	game.settings.register(modulename, "auto-defeated", {
@@ -252,6 +272,13 @@ export const registerSettings = function () {
 		default: true,
 		type: Boolean,
 	});
+	game.settings.register(modulename, "nextup-message", {
+		name: i18n("MonksCombatDetails.nextup-message.name"),
+		scope: "client",
+		config: true,
+		default: i18n("MonksCombatDetails.Next"),
+		type: String,
+	});
 	game.settings.register(modulename, "showcurrentup", {
 		name: i18n("MonksCombatDetails.showcurrentup.name"),
 		hint: i18n("MonksCombatDetails.showcurrentup.hint"),
@@ -260,6 +287,13 @@ export const registerSettings = function () {
 		default: true,
 		type: Boolean,
 	});
+	game.settings.register(modulename, "turn-message", {
+		name: i18n("MonksCombatDetails.turn-message.name"),
+		scope: "client",
+		config: true,
+		default: i18n("MonksCombatDetails.Turn"),
+		type: String,
+	});
 	game.settings.register(modulename, "large-print", {
 		name: i18n("MonksCombatDetails.large-print.name"),
 		hint: i18n("MonksCombatDetails.large-print.hint"),
@@ -267,7 +301,7 @@ export const registerSettings = function () {
 		config: true,
 		default: false,
 		type: Boolean,
-		onChange: debouncedReload
+		requiresReload: true
 	});
 	game.settings.register(modulename, "play-next-sound", {
 		name: i18n("MonksCombatDetails.next-sound.name"),
