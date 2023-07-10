@@ -1,3 +1,11 @@
+# version 11.03
+
+Fixing issues with Combat Carrosel Tracker.
+
+Fixing issues with showing shadows for every movement.
+
+Fixed issues with the right click menu for Combatants.
+
 # version 11.02
 
 Added the option to right click and set a combatant to the current combatant.

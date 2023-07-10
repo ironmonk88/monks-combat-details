@@ -151,8 +151,8 @@ export class MonksCombatDetails {
             }
         }
 
-        Object.defineProperty(Combatant.prototype, "visible", {
-            get: function visible() {
+        if (game.modules.get("combat-tracker-dock")?.active) {
+            patchFunc("Combatant.prototype.visible", function (wrapped, ...args) {
                 if (this.hidden) return this.isOwner;
                 if (setting('hide-enemies') || setting("hide-until-turn")) {
                     if (this.combat && !game.user.isGM) {
@@ -160,9 +160,22 @@ export class MonksCombatDetails {
                         return this.hasPlayerOwner || (this.combat.started && (this.combat.round > 1 || !setting("hide-until-turn") || this.combat.turn >= idx));
                     }
                 }
-                return true;
-            }
-        });
+                return wrapped(...args);
+            }, "MIXED");
+        } else {
+            Object.defineProperty(Combatant.prototype, "visible", {
+                get: function visible() {
+                    if (this.hidden) return this.isOwner;
+                    if (setting('hide-enemies') || setting("hide-until-turn")) {
+                        if (this.combat && !game.user.isGM) {
+                            let idx = this.combat.turns.findIndex(t => t.id == this.id);
+                            return this.hasPlayerOwner || (this.combat.started && (this.combat.round > 1 || !setting("hide-until-turn") || this.combat.turn >= idx));
+                        }
+                    }
+                    return true;
+                }
+            });
+        }
 
         patchFunc("CombatTracker.prototype.getData", async (wrapped, ...args) => {
             if (this.popOut)
@@ -418,7 +431,7 @@ export class MonksCombatDetails {
 
     static async showShadows(data) {
         fromUuid(data.uuid).then((token) => {
-            if (token && (token.isOwner || game.user.isGM) && CombatTurn.shadows[document.id] == undefined) {
+            if (token && (token.isOwner || game.user.isGM) && CombatTurn.shadows[token.id] == undefined) {
                 CombatTurn.showShadow(token.object, data.x, data.y);
             }
         });
@@ -715,7 +728,7 @@ Hooks.on("getCombatTrackerEntryContext", (html, menu) => {
         name: i18n("MonksCombatDetails.SetCurrentCombatant"),
         icon: '<i class="fas fa-list-timeline"></i>',
         condition: li => {
-            return game.combats.viewed.combatant.id != li.data("combatant-id");
+            return game.combats?.viewed?.combatant?.id != li.data("combatant-id");
         },
         callback: li => {
             const combatant = game.combats.viewed.combatants.get(li.data("combatant-id"));
