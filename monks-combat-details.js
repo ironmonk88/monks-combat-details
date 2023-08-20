@@ -29,6 +29,9 @@ export let setting = key => {
 };
 
 export let combatposition = () => {
+    let pos = game.user.getFlag("monks-combat-details", "combat-position");
+    if (pos != undefined)
+        return pos;
     return game.settings.get("monks-combat-details", "combat-position");
 };
 
@@ -107,7 +110,16 @@ export class MonksCombatDetails {
         patchFunc("CombatTrackerConfig.prototype._updateObject", async (wrapped, ...args) => {
             let [event, formData] = args;
             game.settings.set("monks-combat-details", "hide-defeated", formData.hideDefeated);
+            game.combat.setFlag("monks-combat-details", "reroll-initiative", formData.rerollInitiative);
             $('#combat-popout').toggleClass("hide-defeated", formData.hideDefeated == true);
+            return wrapped(...args);
+        });
+
+        // patchFunc on combat tracker when resize to update the user flag for combat position
+        patchFunc("CombatTracker.prototype._onResize", async function (wrapped, ...args) {
+            if (this.popOut) {
+                game.user.setFlag("monks-combat-details", "combat-position", this.position);
+            }
             return wrapped(...args);
         });
 
@@ -154,7 +166,7 @@ export class MonksCombatDetails {
         if (game.modules.get("combat-tracker-dock")?.active) {
             patchFunc("Combatant.prototype.visible", function (wrapped, ...args) {
                 if (this.hidden) return this.isOwner;
-                if (setting('hide-enemies') || setting("hide-until-turn")) {
+                if ((setting('hide-enemies') && !this.combat.started) || (setting("hide-until-turn") && this.combat.started && getProperty(this, "flags.monks-combat-details.reveal" ) !== true)) {
                     if (this.combat && !game.user.isGM) {
                         let idx = this.combat.turns.findIndex(t => t.id == this.id);
                         return this.hasPlayerOwner || (this.combat.started && (this.combat.round > 1 || !setting("hide-until-turn") || this.combat.turn >= idx));
@@ -166,7 +178,7 @@ export class MonksCombatDetails {
             Object.defineProperty(Combatant.prototype, "visible", {
                 get: function visible() {
                     if (this.hidden) return this.isOwner;
-                    if (setting('hide-enemies') || setting("hide-until-turn")) {
+                    if ((setting('hide-enemies') && !this.combat.started) || (setting("hide-until-turn") && this.combat.started && getProperty(this, "flags.monks-combat-details.reveal") !== true)) {
                         if (this.combat && !game.user.isGM) {
                             let idx = this.combat.turns.findIndex(t => t.id == this.id);
                             return this.hasPlayerOwner || (this.combat.started && (this.combat.round > 1 || !setting("hide-until-turn") || this.combat.turn >= idx));
@@ -193,6 +205,15 @@ export class MonksCombatDetails {
         if (!setting("transfer-settings-client") && game.modules.get("monks-little-details")?.active) {
             MonksCombatDetails.transferSettingsClient();
         }
+
+        document.querySelector(':root').style.setProperty("--MonksCombatDetails-large-print-size", setting("large-print-size") + "px");
+
+        patchFunc("Draggable.prototype._onDragMouseUp", async function (wrapped, ...args) {
+            for (const cls of this.app.constructor._getInheritanceChain()) {
+                Hooks.callAll(`dragEnd${cls.name}`, this.app, this.app.position);
+            }
+            return wrapped(...args);
+        });
 
         CombatTurn.ready();
         CombatTurn.checkCombatTurn(game.combats.active);
@@ -288,12 +309,28 @@ export class MonksCombatDetails {
         let sidebar = document.getElementById("ui-right");
         let players = document.getElementById("players");
 
-        app.position.left = (combatposition().endsWith('left') ? 120 : (sidebar.offsetLeft - app.position.width));
-        app.position.top = (combatposition().startsWith('top') ?
-            (combatposition().endsWith('left') ? 70 : (sidebar.offsetTop - 3)) :
-            (combatposition().endsWith('left') ? (players.offsetTop - app.position.height - 3) : (sidebar.offsetTop + sidebar.offsetHeight - app.position.height - 3)));
+        let position = combatposition();
+        let left = 0;
+        let top = 0;
+        if (typeof position === "string") {
+            left = (position.endsWith('left') ? 120 : (sidebar.offsetLeft - app.position.width));
+            top = (position.startsWith('top') ?
+                (position.endsWith('left') ? 70 : (sidebar.offsetTop - 3)) :
+                (position.endsWith('left') ? (players.offsetTop - app.position.height - 3) : (sidebar.offsetTop + sidebar.offsetHeight - app.position.height - 3)));
+        } else {
+            left = position.left;
+            top = position.top;
+        }
+
+        app.position.left = left;
+        app.position.top = top;
 
         $(app._element).css({ top: app.position.top, left: app.position.left });
+
+        if (position.height) {
+            app.position.height = position.height;
+            $(app._element).css({ height: position.height });
+        }
     }
 
     static getCRText (cr) {
@@ -313,48 +350,37 @@ export class MonksCombatDetails {
         var xp = 0;
 
         if (game.system.id == 'pf2e') {
-            //cr will just be a -1 to 3 value (representing trivial - extreme)
-            //apl will not be passed forward, instead XP is passed forward
-
-            //note, should be referenced by xpByRelLevel[relLevel + 4]
-            var xpByRelLevel = [0, 10, 15, 20, 30, 40, 60, 80, 120, 160];
-
-            //note that this needs to be multiplied by party size
-            var AdjByXP = [10, 15, 20, 30, 40]
-
-            //determine APL, and modifiers if necessary
+            // split combat.combatants into three arrays: PCs, NPCs, and Hazards
+            let npcLevels = [];
+            let hazardLevels = [];
             for (let combatant of combat.combatants) {
-                if (combatant.actor != undefined && combatant.token != undefined && combatant.token.disposition == 1) {
-                    apl.count = apl.count + 1;
-                    let levels = combatant?.actor.system.details?.level?.value || combatant?.actor.system.details?.level || 0;
+                if (combatant.actor != undefined && combatant.token != undefined) {
+                    if (combatant.actor.type == "hazard") {
+                        hazardLevels.push({
+                            level: parseInt(combatant.actor.system.details.level?.value ?? 1, 10),
+                            isComplex: combatant.actor.system.details.isComplex ?? false,
+                        });
+                    } else if (combatant.token.disposition == 1) {
+                        apl.count = apl.count + 1;
+                        let levels = combatant?.actor.system.details?.level?.value || combatant?.actor.system.details?.level || 0;
 
-                    apl.levels += levels;
+                        apl.levels += levels;
+                    } else {
+                        npcLevels.push(parseInt(combatant.actor.system.details?.level?.value ?? '1', 10));
+                    }
                 }
             }
 
             var calcAPL = 0;
             if (apl.count > 0)
                 calcAPL = Math.round(apl.levels / apl.count);
-            //this approximation is fine -- most pf2e parties should all be the same level, but otherwise we can just round
 
-            //for each enemy, determine its xp value
-            for (let combatant of combat.combatants) {
-                if (combatant.actor != undefined && combatant.token != undefined && combatant.token.disposition != 1) {
-                    var level = 0;
-                    level = parseInt(combatant?.actor.system.details?.level?.value ?? 0);
-                    var relLevel = level - calcAPL;
-                    xp += xpByRelLevel[Math.clamped(relLevel + 5, 0, xpByRelLevel.length - 1)];
-                }
-            }
+            xp = game.pf2e.gm.calculateXP(calcAPL, apl.count, npcLevels, hazardLevels, {
+                proficiencyWithoutLevel: game.settings.get('pf2e', 'proficiencyVariant') === 'ProficiencyWithoutLevel',
+            });
 
-            if (apl.count != 4) {
-                let partyAdj = MonksCombatDetails.xpchart.filter((budget, index) => xp >= budget || index == 0);
-                let partyXP = AdjByXP[Math.clamped(partyAdj.length - 1, 0, AdjByXP.length - 1)];
-                xp += partyXP * (apl.count - 4) * -1;
-            }
-
-            var partyCR = MonksCombatDetails.xpchart.filter((budget, index) => xp >= budget || index == 0);
-            return { cr: partyCR.length - 1, xp: xp, count: apl.count };
+            var partyCR = MonksCombatDetails.xpchart.filter((budget, index) => xp.ratingXP >= budget || index == 0);
+            return { cr: partyCR.length, xp: xp.ratingXP, count: apl.count };
         } else {
             //get the APL of friendly combatants
             for (let combatant of combat.combatants) {
@@ -399,7 +425,7 @@ export class MonksCombatDetails {
 
     static checkPopout(combat, delta) {
         let combatCreated = (combat && combat.started !== true && setting("popout-when") == "created");
-        let combatStarted = (combat && combat.started === true && setting("popout-when") == "starts" && ((delta?.round === 1 && delta.turn === 0 ) || delta?.bypass || delta == undefined));
+        let combatStarted = (combat && combat.started === true && setting("popout-when") == "starts" && ((delta?.round === 1 && (delta.turn === 0 || delta.turn === undefined) ) || delta?.bypass || delta == undefined));
 
         //log("update combat", combat);
         let opencombat = setting("opencombat");
@@ -469,7 +495,7 @@ export class MonksCombatDetails {
                     await combatant.update({ defeated: defeated });
                 }
 
-                if (defeated && setting("invisible-dead")) {
+                if (defeated && token && setting("invisible-dead")) {
                     token.update({ "hidden": true });
                 }
             }
@@ -494,6 +520,10 @@ Hooks.on("createCombat", function (data, delta) {
         ui.sidebar.activateTab("combat");
 
     MonksCombatDetails.checkPopout(combat);
+});
+
+Hooks.on("preCreateCombat", function (data) {
+    setProperty(data, "flags.monks-combat-details.reroll-initiative", setting("reroll-initiative"));
 });
 
 Hooks.on("deleteCombat", function (combat) {
@@ -546,6 +576,32 @@ Hooks.on("updateCombat", async function (combat, delta) {
         //+++ make sure if it's not this players turn and it's not the GM to add padding for the button at the bottom
         MonksCombatDetails.tracker = false;   //delete this so that the next render will reposition the popout, changing between combats changes the height
     }*/
+
+    // If the current combatant is a placeholder and removeAfter is greater than or equal to removeStart plus the current round then delete the combatant
+    if (game.user.isTheGM && combat.combatant.getFlag("monks-combat-details", "placeholder")) {
+        let removeAfter = combat.combatant.getFlag("monks-combat-details", "removeAfter");
+        if (removeAfter && removeAfter <= combat.round - combat.combatant.getFlag("monks-combat-details", "removeStart")) {
+            let img = combat.combatant.img || "icons/svg/mystery-man.svg";
+            Dialog.confirm({
+                title: i18n("MonksCombatDetails.RemovePlaceholderCombatant"),
+                content: `<div class="flexrow"><div style="flex:0 0 60px;"><img style="width: 50px;height: 50px;" src="${img}"></div><div>The placeholder combatant <b>${combat.combatant.name}</b> has used all the rounds remaining and will be removed from the combat.</div></div><p>Are you sure?</p>`,
+                yes: () => {
+                    combat.combatant.delete();
+                }
+            })
+        }
+    }
+
+    if (game.user.isTheGM && combat.getFlag("monks-combat-details", "reroll-initiative")  && combat.combatants.size && combat.started && delta.round > 1 && delta.turn == 0 ) {
+        let combatants = combat.combatants.filter(c => !c.getFlag("monks-combat-details", "placeholder")).map(c => c.id);
+        if (combatants.length > 0) {
+            await combat.rollInitiative(combatants);
+
+            const updateData = { turn: 0 };
+            Hooks.callAll("combatTurn", this, updateData, {});
+            return game.combats.viewed.update(updateData);
+        }
+    }
 });
 
 /*
@@ -690,6 +746,11 @@ Hooks.on("updateCombatant", async function (combatant, data, options, userId) {
             t.object.refresh();
         }
     }
+
+    // if data includes hidden then we need to set a flag to indicate that the combatant should not be excluded from the combat tracker
+    if (data.hidden != undefined && game.user.isTheGM) {
+        await combatant.setFlag("monks-combat-details", "reveal", true);
+    }
 });
 
 Hooks.on("renderCombatTrackerConfig", (app, html, data) => {
@@ -698,6 +759,11 @@ Hooks.on("renderCombatTrackerConfig", (app, html, data) => {
         .append($('<input>').attr("type", "checkbox").attr("name", "hideDefeated").attr('data-dtype', 'Boolean').prop("checked", setting("hide-defeated") == true))
         .append($('<p>').addClass("notes").html(i18n("MonksCombatDetails.HideDefeatedHint")))
         .insertAfter($('input[name="skipDefeated"]', html).closest(".form-group"));
+
+    $("<div>").addClass("form-group")
+        .append($('<label>').html(i18n("MonksCombatDetails.RerollInitiative")))
+        .append($('<input>').attr("type", "checkbox").attr("name", "rerollInitiative").attr('data-dtype', 'Boolean').prop("checked", getProperty(game.combat, "flags.monks-combat-details.reroll-initiative") == true))
+        .insertBefore($('input[name="skipDefeated"]', html).closest(".form-group"));
 
     app.setPosition({ height: 'auto' });
 });
@@ -763,3 +829,7 @@ Hooks.on("getCombatTrackerEntryContext", (html, menu) => {
         }
     });
 });
+
+Hooks.on('dragEndCombatTracker', (app, position) => {
+    game.user.setFlag("monks-combat-details", "combat-position", position);
+})

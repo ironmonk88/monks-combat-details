@@ -62,6 +62,8 @@
 	"MonksCombatDetails.hide-until-turn.hint": "Hide enemies on the combat tracker until they have their turn",
 	"MonksCombatDetails.large-print.name": "Large Size",
 	"MonksCombatDetails.large-print.hint": "Display the turn notification in large size",
+	"MonksCombatDetails.large-print-size.name": "Large Font Size",
+	"MonksCombatDetails.large-print-size.hint": "Set the font size for the large turn notification",
 	"MonksCombatDetails.prevent-combat-spells.name": "Prevent Spell changes",
 	"MonksCombatDetails.prevent-combat-spells.hint": "When a token is in combat, prevent prepared spells from being changed.",
 	"MonksCombatDetails.select-combatant.name": "Select Combatants",
@@ -72,6 +74,8 @@
 	"MonksCombatDetails.nextup-message.name": "Next Up Message",
 	"MonksCombatDetails.popout-when.name": "Popup when",
 	"MonksCombatDetails.popout-when.hint": "Set if the popup happens at the start of combat or when it is created",
+	"MonksCombatDetails.reroll-initiative.name": "Reroll Initiative",
+	"MonksCombatDetails.reroll-initiative.hint": "Reroll initiative every round",
 
 	"MonksCombatDetails.Round": "Round",
 	"MonksCombatDetails.RoundEnd": "Round End",
@@ -91,6 +95,9 @@
 	"MonksCombatDetails.PlayRoundSound": "Play new round sound",
 	"MonksCombatDetails.PlayRoundSoundHint": "Play a sound when the next round starts",
 	"MonksCombatDetails.AddPlaceholder": "Add Placeholder Combatant",
+	"MonksCombatDetails.RemoveAfter": "Remove After (rounds)",
+	"MonksCombatDetails.RemovePlaceholderCombatant": "Remove Placeholder Combatant",
+	"MonksCombatDetails.RerollInitiative": "Reroll Initiative",
 
 	"MonksCombatDetails.PreventTokenMessage": "Once in combat, a token cannot be removed except through the encounter interface.",
 

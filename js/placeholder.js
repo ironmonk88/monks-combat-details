@@ -72,6 +72,12 @@ export class PlaceholderCombatant {
         delete combatant._id;
         if (app.viewed?.started && app.viewed?.combatant?.initiative) {
             combatant.initiative = app.viewed.combatant?.initiative - 1;
+            if (app.viewed?.combatant?.combat.nextCombatant?.initiative) {
+                let diff = app.viewed?.combatant?.initiative - app.viewed?.combatant?.combat.nextCombatant?.initiative;
+                if (diff <= 1 && diff >= 0)
+                    // set combatant initiative to halfway between current and next combatant round to one decimal place
+                    combatant.initiative = Math.round((app.viewed.combatant?.initiative + app.viewed.combatant?.combat.nextCombatant?.initiative) / 2 * 10) / 10;
+            }  
         }
         new PlaceholderCombatantConfig(combatant).render(true);
     }
@@ -88,12 +94,23 @@ export class PlaceholderCombatantConfig extends CombatantConfig {
         });
     }
 
-    activateListeners(html) {
-        $(`input[name="defeated"]`, html).parent().remove();
+    async _render(force = false, options = {}) {
+        await super._render(force, options);
+        $(`input[name="defeated"]`, this.element).parent().remove();
+        $('<div>').addClass("form-group")
+            .append($('<label>').html(i18n("MonksCombatDetails.RemoveAfter")))
+            .append($('<input>').attr("type", "number").css({
+                "text-align": "right",
+                "flex": "0 0 75px"
+        }).attr("name", "flags.monks-combat-details.removeAfter").val(this.object.getFlag("monks-combat-details", "removeAfter")))
+            .insertBefore($(`footer`, this.element));
+
+        this.setPosition({ height: "auto" });
     }
 
     async _updateObject(event, formData) {
         formData["flags.monks-combat-details.placeholder"] = true;
+        formData["flags.monks-combat-details.removeStart"] = game.combat.round;
         if (!this.object._id) {
             formData.actorId = this.object.actorId;
             formData.tokenId = this.object.tokenId;

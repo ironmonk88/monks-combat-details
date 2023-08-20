@@ -107,6 +107,14 @@ export const registerSettings = function () {
 		default: true,
 		type: Boolean
 	});
+	game.settings.register(modulename, "reroll-initiative", {
+		name: i18n("MonksCombatDetails.reroll-initiative.name"),
+		hint: i18n("MonksCombatDetails.reroll-initiative.hint"),
+		scope: "world",
+		config: true,
+		default: false,
+		type: Boolean
+	});
 	game.settings.register(modulename, "show-start", {
 		name: i18n("MonksCombatDetails.show-start.name"),
 		hint: i18n("MonksCombatDetails.show-start.hint"),
@@ -176,7 +184,10 @@ export const registerSettings = function () {
 		default: "bottomright",
 		type: String,
 		choices: dialogpositions,
-		config: true
+		config: true,
+		change: () => {
+			game.user.unsetFlag("monks-combat-details", "combat-position");
+		}
 	});
 	game.settings.register(modulename, "close-combat-when-done", {
 		name: i18n("MonksCombatDetails.close-combat-when-done.name"),
@@ -303,6 +314,23 @@ export const registerSettings = function () {
 		type: Boolean,
 		requiresReload: true
 	});
+	game.settings.register(modulename, "large-print-size", {
+		name: i18n("MonksCombatDetails.large-print-size.name"),
+		hint: i18n("MonksCombatDetails.large-print-size.hint"),
+		scope: "client",
+		config: true,
+		range: {
+			min: 50,
+			max: 120,
+			step: 5,
+		},
+		default: 80,
+		type: Number,
+		onChange: (value) => {
+			// change the css variable
+			document.querySelector(':root').style.setProperty("--MonksCombatDetails-large-print-size", value + "px");
+		},
+    });
 	game.settings.register(modulename, "play-next-sound", {
 		name: i18n("MonksCombatDetails.next-sound.name"),
 		hint: i18n("MonksCombatDetails.next-sound.hint"),

@@ -1,3 +1,25 @@
+# version 11.04
+
+Added the option to set the font size for the large print turn notification.
+
+Fixed initial initiative for placeholder combatants if the previous and next combatants are 1 initiative away from each other
+
+Added the option to remove placeholder combatants after a certain number of turns.
+
+Added the option to record the last position and height of the combat tracker, so the next tiem it's opened it will open exactly where you want it.
+
+Added the option to reroll initiative at the start of every round.
+
+Updated the hide enemies until their turn, to allow GMs to hide and show the enemy if they want to reveal it before it's their turn.
+
+Updated the combat CR function in Pathfinder 2e to use it's own methods to calculate it properly.
+
+Fixed issue with pathfinder 2e where it wasn't registering when a combat starts, and therefore not opening the pop out.
+
+Fixed issue with setting a combatant's token to invisible when dead, if the combatant doesn't have a token.
+
+
+
 # version 11.03
 
 Fixing issues with Combat Carrosel Tracker.

@@ -1,3 +1,7 @@
+:root {
+    --MonksCombatDetails-large-print-size: 80px;
+}
+
 .group-header {
     font-weight: bold;
     padding: 8px 20px;
@@ -129,7 +133,7 @@ body.dark-theme.system-sw5e #chat-log .message.round-marker .message-header .fla
     position: absolute;
     top: 35%;
     height: 180px;
-    font-size: 80px;
+    font-size: var(--MonksCombatDetails-large-print-size);
     line-height: 180px;
     text-align: center;
     pointer-events: none;
