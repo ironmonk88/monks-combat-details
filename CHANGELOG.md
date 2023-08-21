@@ -18,8 +18,6 @@ Fixed issue with pathfinder 2e where it wasn't registering when a combat starts,
 
 Fixed issue with setting a combatant's token to invisible when dead, if the combatant doesn't have a token.
 
-
-
 # version 11.03
 
 Fixing issues with Combat Carrosel Tracker.
