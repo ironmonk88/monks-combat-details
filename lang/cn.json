@@ -60,7 +60,7 @@
 	"MonksCombatDetails.prevent-initiative.hint": "若仍有先攻未掷骰，则组织战斗遭遇开始",
 	"MonksCombatDetails.hide-until-turn.name": "隐藏战斗追踪顺序",
 	"MonksCombatDetails.hide-until-turn.hint": "在战斗追踪里诶报上隐藏敌人的位置，直到他们的回合开始",
-	"MonksCombatDetails.large-print.name": "大字报",
+	"MonksCombatDetails.large-print.name": "大字提示",
 	"MonksCombatDetails.large-print.hint": "用大号字体显示回合提示（真的很大）",
 	"MonksCombatDetails.large-print-size.name": "大号字体",
 	"MonksCombatDetails.large-print-size.hint": "设置回合提示的大号字体大小",
