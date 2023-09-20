@@ -78,6 +78,8 @@
 	"MonksCombatDetails.reroll-initiative.hint": "Reroll initiative every round",
 	"MonksCombatDetails.remember-position.name": "Remeber Position",
 	"MonksCombatDetails.remember-position.hint": "Remember the position of the combat tracker between combats",
+	"MonksCombatDetails.combat-alert.name": "Combat Alert",
+  "MonksCombatDetails.combat-alert.hint": "Show an alert icon when combat is created",
 
 	"MonksCombatDetails.Round": "Round",
 	"MonksCombatDetails.RoundEnd": "Round End",

@@ -160,8 +160,8 @@ export class MonksCombatDetails {
         }
 
         patchFunc("Combat.prototype.rollInitiative", async function (wrapped, ...args) {
+            let [ids, options] = args;
             if ((setting("hide-until-turn") || setting('hide-enemies')) && game.user.isGM) {
-                let [ids, options] = args;
                 options = options || { };
                 ids = typeof ids === "string" ? [ids] : ids;
                 let hiddenIds = [];
@@ -175,9 +175,8 @@ export class MonksCombatDetails {
                 if (hiddenIds.length > 0) {
                     await wrapped.call(this, hiddenIds, mergeObject(duplicate(options), { messageOptions: { rollMode: "selfroll" } }));
                 }
-
-                return wrapped.call(this, ids, options);
             }
+            return wrapped.call(this, ids, options);
         })
 
         if (game.settings.get("monks-combat-details", "prevent-token-removal")) {
@@ -234,6 +233,10 @@ export class MonksCombatDetails {
         }
         if (!setting("transfer-settings-client") && game.modules.get("monks-little-details")?.active) {
             MonksCombatDetails.transferSettingsClient();
+        }
+
+        if (setting("combat-alert") && $('#combat-notification').length === 0) {
+            $("#sidebar-tabs a[data-tab='combat']").append(`<i id="combat-notification" class="notification-pip fas fa-exclamation-circle" style="display: none;"></i>`);
         }
 
         document.querySelector(':root').style.setProperty("--MonksCombatDetails-large-print-size", setting("large-print-size") + "px");
@@ -367,6 +370,14 @@ export class MonksCombatDetails {
             app.position.height = position.height;
             $(app._element).css({ height: position.height });
         }
+    }
+
+    static combatNotify() {
+        let icon = $("#combat-notification");
+        if (icon.is(":hidden")) icon.fadeIn(100);
+        setTimeout(() => {
+            if (icon.is(":visible")) icon.fadeOut(100);
+        }, 3001);
     }
 
     static getCRText (cr) {
@@ -554,6 +565,11 @@ Hooks.on("createCombat", function (data, delta) {
     //when combat is created, switch to combat tab
     if (game.user.isGM && setting("switch-combat-tab") && ui.sidebar.activeTab !== "combat")
         ui.sidebar.activateTab("combat");
+
+    if (game.user.isGM && setting("combat-alert")) {
+        MonksCombatDetails.combatNotify();
+        MonksCombatDetails.emit("combatNotify");
+    }
 
     MonksCombatDetails.checkPopout(combat);
 });

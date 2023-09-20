@@ -1,3 +1,9 @@
+# version 11.08
+
+Fixed issue with players not being able to role initiative.
+
+Added an alert when a combat is created
+
 # version 11.07
 
 Fixed issue where changing the font size for turn notifications to a very large number was wrapping text when it shouldn't be.

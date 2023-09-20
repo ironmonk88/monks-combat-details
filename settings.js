@@ -80,6 +80,21 @@ export const registerSettings = function () {
 		default: game.system.id != "pf2e",
 		type: Boolean,
 	});
+	game.settings.register(modulename, "combat-alert", {
+		name: i18n("MonksCombatDetails.combat-alert.name"),
+		hint: i18n("MonksCombatDetails.combat-alert.hint"),
+		scope: "world",
+		config: true,
+		default: true,
+		type: Boolean,
+		onChange: (value) => {
+			if (value && $('#combat-notification').length === 0) {
+				$("#sidebar-tabs a[data-tab='combat']").append(`<i id="combat-notification" class="notification-pip fas fa-exclamation-circle" style="display: none;"></i>`);
+			} else if (!value) {
+				$('#combat-notification').remove();
+			}
+		}
+	});
 
 	//combat details
 	game.settings.register(modulename, "clear-targets", {
