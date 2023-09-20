@@ -29,9 +29,11 @@ export let setting = key => {
 };
 
 export let combatposition = () => {
-    let pos = game.user.getFlag("monks-combat-details", "combat-position");
-    if (pos != undefined)
-        return pos;
+    if (setting("remember-position")) {
+        let pos = game.user.getFlag("monks-combat-details", "combat-position");
+        if (pos != undefined)
+            return pos;
+    }
     return game.settings.get("monks-combat-details", "combat-position");
 };
 
@@ -117,7 +119,7 @@ export class MonksCombatDetails {
         patchFunc("CombatTrackerConfig.prototype._updateObject", async (wrapped, ...args) => {
             let [event, formData] = args;
             game.settings.set("monks-combat-details", "hide-defeated", formData.hideDefeated);
-            game.combat.setFlag("monks-combat-details", "reroll-initiative", formData.rerollInitiative);
+            game.settings.set("monks-combat-details", "reroll-initiative", formData.rerollInitiative);
             $('#combat-popout').toggleClass("hide-defeated", formData.hideDefeated == true);
             return wrapped(...args);
         });
@@ -157,6 +159,27 @@ export class MonksCombatDetails {
             }
         }
 
+        patchFunc("Combat.prototype.rollInitiative", async function (wrapped, ...args) {
+            if ((setting("hide-until-turn") || setting('hide-enemies')) && game.user.isGM) {
+                let [ids, options] = args;
+                options = options || { };
+                ids = typeof ids === "string" ? [ids] : ids;
+                let hiddenIds = [];
+                ids = ids.filter((id) => { 
+                    const combatant = this.combatants.get(id);
+                    if (combatant.hasPlayerOwner) return true;
+                    hiddenIds.push(id);
+                    return false;
+                });
+
+                if (hiddenIds.length > 0) {
+                    await wrapped.call(this, hiddenIds, mergeObject(duplicate(options), { messageOptions: { rollMode: "selfroll" } }));
+                }
+
+                return wrapped.call(this, ids, options);
+            }
+        })
+
         if (game.settings.get("monks-combat-details", "prevent-token-removal")) {
             let oldToggleCombat = TokenHUD.prototype._onToggleCombat;
             TokenHUD.prototype._onToggleCombat = function (event) {
@@ -183,7 +206,7 @@ export class MonksCombatDetails {
             }, "MIXED");
         } else {
             Object.defineProperty(Combatant.prototype, "visible", {
-                get: function visible() {
+                get: function() {
                     if (this.hidden) return this.isOwner;
                     if ((setting('hide-enemies') && !this.combat.started) || (setting("hide-until-turn") && this.combat.started && getProperty(this, "flags.monks-combat-details.reveal") !== true)) {
                         if (this.combat && !game.user.isGM) {
@@ -535,10 +558,6 @@ Hooks.on("createCombat", function (data, delta) {
     MonksCombatDetails.checkPopout(combat);
 });
 
-Hooks.on("preCreateCombat", function (data) {
-    setProperty(data, "flags.monks-combat-details.reroll-initiative", setting("reroll-initiative"));
-});
-
 Hooks.on("deleteCombat", function (combat) {
     MonksCombatDetails.tracker = false;   //if the combat gets deleted, make sure to clear this out so that the next time the combat popout gets rendered it repositions the dialog
 
@@ -591,8 +610,8 @@ Hooks.on("updateCombat", async function (combat, delta) {
     }*/
 
     // If the current combatant is a placeholder and removeAfter is greater than or equal to removeStart plus the current round then delete the combatant
-    if (game.user.isTheGM && combat.combatant.getFlag("monks-combat-details", "placeholder")) {
-        let removeAfter = combat.combatant.getFlag("monks-combat-details", "removeAfter");
+    if (game.user.isTheGM && combat.combatant?.getFlag("monks-combat-details", "placeholder")) {
+        let removeAfter = combat.combatant?.getFlag("monks-combat-details", "removeAfter");
         if (removeAfter && removeAfter <= combat.round - combat.combatant.getFlag("monks-combat-details", "removeStart")) {
             let img = combat.combatant.img || "icons/svg/mystery-man.svg";
             Dialog.confirm({
@@ -605,7 +624,7 @@ Hooks.on("updateCombat", async function (combat, delta) {
         }
     }
 
-    if (game.user.isTheGM && combat.getFlag("monks-combat-details", "reroll-initiative")  && combat.combatants.size && combat.started && delta.round > 1 && delta.turn == 0 ) {
+    if (game.user.isTheGM && setting("reroll-initiative")  && combat.combatants.size && combat.started && delta.round > 1 && delta.turn == 0 ) {
         let combatants = combat.combatants.filter(c => !c.getFlag("monks-combat-details", "placeholder")).map(c => c.id);
         if (combatants.length > 0) {
             await combat.rollInitiative(combatants);
@@ -775,7 +794,7 @@ Hooks.on("renderCombatTrackerConfig", (app, html, data) => {
 
     $("<div>").addClass("form-group")
         .append($('<label>').html(i18n("MonksCombatDetails.RerollInitiative")))
-        .append($('<input>').attr("type", "checkbox").attr("name", "rerollInitiative").attr('data-dtype', 'Boolean').prop("checked", getProperty(game.combat, "flags.monks-combat-details.reroll-initiative") == true))
+        .append($('<input>').attr("type", "checkbox").attr("name", "rerollInitiative").attr('data-dtype', 'Boolean').prop("checked", setting("reroll-initiative") == true))
         .insertBefore($('input[name="skipDefeated"]', html).closest(".form-group"));
 
     app.setPosition({ height: 'auto' });
@@ -818,7 +837,7 @@ Hooks.on("getCombatTrackerEntryContext", (html, menu) => {
                     yes: () => {
                         let idx = game.combats.viewed.turns.findIndex(c => c.id == combatant.id);
                         const updateData = { turn: idx };
-                        Hooks.callAll("combatTurn", this, updateData, {});
+                        Hooks.callAll("combatTurn", game.combats.viewed, updateData, {});
                         return game.combats.viewed.update(updateData);
                     }
                 });

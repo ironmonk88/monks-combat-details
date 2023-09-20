@@ -76,6 +76,8 @@
 	"MonksCombatDetails.popout-when.hint": "Set if the popup happens at the start of combat or when it is created",
 	"MonksCombatDetails.reroll-initiative.name": "Reroll Initiative",
 	"MonksCombatDetails.reroll-initiative.hint": "Reroll initiative every round",
+	"MonksCombatDetails.remember-position.name": "Remeber Position",
+	"MonksCombatDetails.remember-position.hint": "Remember the position of the combat tracker between combats",
 
 	"MonksCombatDetails.Round": "Round",
 	"MonksCombatDetails.RoundEnd": "Round End",

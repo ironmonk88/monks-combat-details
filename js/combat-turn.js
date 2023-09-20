@@ -1,17 +1,24 @@
-import { MonksCombatDetails, i18n, log, debug, setting } from "../monks-combat-details.js";
+import { MonksCombatDetails, i18n, log, debug, setting, patchFunc } from "../monks-combat-details.js";
 
 export class CombatTurn {
     static shadows = {};
     static sounds = {};
 
     static init() {
-
         //setTarget
-        if (setting('remember-previous')) {
-            let combatNextTurn = async function (wrapped, ...args) {
-                let current = canvas.tokens.get(game.combats.active?.current?.tokenId);
+        let combatNextTurn = async function (wrapped, ...args) {
+            let current = canvas.tokens.get(game.combats.active?.current?.tokenId);
 
-                if (current?.isOwner) {
+            if (current?.actor.hasPlayerOwner && game.user.isGM) {
+                // If the current combatant is a player, and the GM pressed next, then save the targets for the player
+                for (let user of game.users) {
+                    if (user.getFlag('monks-combat-details', 'remember-previous') && current?.actor.ownership[user.id] == CONST.DOCUMENT_OWNERSHIP_LEVELS.OWNER) {
+                        let targets = Array.from(user.targets).map(t => t.id);
+                        await user.setFlag('monks-combat-details', 'targets', targets);
+                    }
+                }
+            } else if (current?.isOwner) {
+                if (setting('remember-previous')) {
                     let targets = Array.from(game.user.targets).map(t => t.id);
                     log('saving targets, set target', current.name, targets);
                     if (game.user.isGM)
@@ -19,19 +26,12 @@ export class CombatTurn {
                     else
                         await game.user.setFlag('monks-combat-details', 'targets', targets);
                 }
-
-                return wrapped(...args);
             }
 
-            if (game.modules.get("lib-wrapper")?.active) {
-                libWrapper.register("monks-combat-details", "Combat.prototype.nextTurn", combatNextTurn, "WRAPPER");
-            } else {
-                const oldNextTurn = Combat.prototype.nextTurn;
-                Combat.prototype.nextTurn = function (event) {
-                    return combatNextTurn.call(this, oldNextTurn.bind(this), ...arguments);
-                }
-            }
+            return wrapped(...args);
         }
+
+        patchFunc("Combat.prototype.nextTurn", combatNextTurn);
 
         /*
         Hooks.on("deleteCombatant", function (combatant, data, userId) {
@@ -114,6 +114,11 @@ export class CombatTurn {
 
                 log('loading targets', combat?.combatant?.token?.name, targets);
                 if (targets && targets.length > 0) {
+                    // release all current targets
+                    for (let t of game.user.targets) {
+                        t.setTarget(false, { user: game.user, releaseOthers: false, groupSelection: true });
+                    }
+                    // Select the previous targets
                     for (let id of targets) {
                         let token = canvas.tokens.get(id);
                         if (token
@@ -121,14 +126,6 @@ export class CombatTurn {
                             && !((token?.combatant && token?.combatant.defeated) || token.actor?.statuses.has(CONFIG.specialStatusEffects.DEFEATED) || token.document.overlayEffect == CONFIG.controlIcons.defeated))
                             token.setTarget(true, { user: game.user, releaseOthers: false, groupSelection: false });
                     }
-
-                    /*
-                    log('saving targets', combat.combatant.token.name, targets);
-                    if (game.user.isGM)
-                        await combat.combatant.token.setFlag('monks-combat-details', 'targets', targets);
-                    else
-                        await game.user.setFlag('monks-combat-details', 'targets', targets);
-                        */
                 }
             }
 
@@ -266,12 +263,15 @@ export class CombatTurn {
         game.settings.settings.get("monks-combat-details.play-next-sound").default = !game.user.isGM;
         game.settings.settings.get("monks-combat-details.clear-targets").default = game.user.isGM;
 
+        game.user.setFlag('monks-combat-details', 'remember-previous', setting("remember-previous"));
+
         if (setting("large-print")) {
             $("<div>").attr("id", "your-turn").appendTo('body');
         }
     }
 
     static removeShadow(id) {
+        if (CombatTurn.shadows[id] == undefined) return;
         CombatTurn.shadows[id].destroy();
         delete CombatTurn.shadows[id];
     }

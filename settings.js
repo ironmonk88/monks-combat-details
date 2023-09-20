@@ -97,7 +97,10 @@ export const registerSettings = function () {
 		config: true,
 		default: true,
 		type: Boolean,
-		requiresReload: true
+		requiresReload: true,
+		onChange: (value) => {
+			game.user.setFlag('monks-combat-details', 'remember-previous', value);
+		}
 	});
 	game.settings.register(modulename, "round-chatmessages", {
 		name: i18n("MonksCombatDetails.round-chatmessages.name"),
@@ -167,6 +170,14 @@ export const registerSettings = function () {
 		choices: popoutoptions,
 		default: "starts",
 		type: String
+	});
+	game.settings.register(modulename, "remember-position", {
+		name: i18n("MonksCombatDetails.remember-position.name"),
+		hint: i18n("MonksCombatDetails.remember-position.hint"),
+		scope: "client",
+		config: true,
+		default: true,
+		type: Boolean
 	});
 	game.settings.register(modulename, "opencombat", {
 		name: i18n("MonksCombatDetails.opencombat.name"),
@@ -406,6 +417,13 @@ export const registerSettings = function () {
 	});*/
 
 	game.settings.register(modulename, "hide-defeated", {
+		scope: "world",
+		config: false,
+		default: false,
+		type: Boolean
+	});
+
+	game.settings.register(modulename, "reroll-initiative", {
 		scope: "world",
 		config: false,
 		default: false,

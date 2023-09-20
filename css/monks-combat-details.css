@@ -142,6 +142,8 @@ body.dark-theme.system-sw5e #chat-log .message.round-marker .message-header .fla
     opacity: 0;
     transition: opacity 0.5s;
     box-shadow: 0 0 10px var(--color-shadow-dark);
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 #your-turn.show {

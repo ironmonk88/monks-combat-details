@@ -1,3 +1,27 @@
+# version 11.07
+
+Fixed issue where changing the font size for turn notifications to a very large number was wrapping text when it shouldn't be.
+
+Fixed issue where GM changing to the next turn wasn't saving the players targets.
+
+Fixed issue with removing a shadow when the shadow has already been removed.
+
+Fixed issue with the reroll initiative setting was preventing the combat tracker from updating.
+
+Updated the hide enemy function to include rolling initiative privately for creatures that should be hidden.
+
+Fixed issue with defining the visible property of the Combatant.
+
+Fixed issues with removing placeholder combatant when no combatant exists.
+
+Fixed issue with trying to set re-roll initiative specific to a combat instead of using the global setting.
+
+Fixed issue with getting the context menu for combatants.
+
+Added the option to turn off remembering the last position fo the combat tracker
+
+Fixed issue where targets between turns weren't resetting, but adding upon.
+
 # version 11.04
 
 Added the option to set the font size for the large print turn notification.
