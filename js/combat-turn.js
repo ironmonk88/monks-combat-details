@@ -1,4 +1,4 @@
-import { MonksCombatDetails, i18n, log, debug, setting, patchFunc } from "../monks-combat-details.js";
+import { MonksCombatDetails, i18n, log, debug, setting, patchFunc, getVolume } from "../monks-combat-details.js";
 
 export class CombatTurn {
     static shadows = {};
@@ -9,7 +9,7 @@ export class CombatTurn {
         let combatNextTurn = async function (wrapped, ...args) {
             let current = canvas.tokens.get(game.combats.active?.current?.tokenId);
 
-            if (current?.actor.hasPlayerOwner && game.user.isGM) {
+            if (current?.actor?.hasPlayerOwner && game.user.isGM) {
                 // If the current combatant is a player, and the GM pressed next, then save the targets for the player
                 for (let user of game.users) {
                     if (user.getFlag('monks-combat-details', 'remember-previous') && current?.actor.ownership[user.id] == CONST.DOCUMENT_OWNERSHIP_LEVELS.OWNER) {
@@ -33,7 +33,6 @@ export class CombatTurn {
 
         patchFunc("Combat.prototype.nextTurn", combatNextTurn);
 
-        /*
         Hooks.on("deleteCombatant", function (combatant, data, userId) {
             let combat = combatant.parent;
             CombatTurn.checkCombatTurn(combat);
@@ -45,7 +44,6 @@ export class CombatTurn {
             if (combatant.actor?.isOwner == true)
                 CombatTurn.checkCombatTurn(combat);
         });
-        */
 
         Hooks.on("deleteCombat", function (combat) {
             if (setting('round-chatmessages') && combat && game.user.isTheGM && combat.started) {
@@ -74,6 +72,9 @@ export class CombatTurn {
         });*/
 
         Hooks.on("updateCombat", async function (combat, delta) {
+            if (combat.round == combat._mld_round && combat.turn == combat._mld_turn)
+                return;
+
             if (delta.turn != undefined)
                 CombatTurn.checkCombatTurn(combat);
 
@@ -95,7 +96,7 @@ export class CombatTurn {
                 }
             }
 
-            if (combat && combat.started && game.user.isGM && setting('select-combatant')) {
+            if (combat && combat.started && setting('select-combatant')) {
                 combat?.combatant?.token?._object?.control();
             }
 
@@ -142,9 +143,7 @@ export class CombatTurn {
             }
 
             if (setting('play-round-sound') && setting('round-sound') && Object.keys(delta).some((k) => k === "round")) {
-                //let volume = (setting('volume') / 100) * game.settings.get("core", 'globalInterfaceVolume');
-                //AudioHelper.play({ src: setting('round-sound'), volume: volume });
-                CombatTurn.playTurnSounds('round');
+                CombatTurn.playTurnSounds(combat, 'round');
             }
 
             if (combat && combat.started && (delta.round || delta.turn) && setting('auto-scroll')) {
@@ -155,6 +154,9 @@ export class CombatTurn {
                     $(this).parent().scrollTop(Math.max(this.offsetTop - 96, 0)); // - $(this).height()
                 });
             }
+
+            combat._mld_round = combat.round;
+            combat._mld_turn = combat.turn;
         });
 
         Hooks.on("updateCombatant", async function (combatant, data, options, userId) {
@@ -282,36 +284,50 @@ export class CombatTurn {
         CombatTurn.shadows = {};
     }
 
-    static doDisplayTurn() {
+    static doDisplayTurn(combatant) {
         if (setting("showcurrentup") && !game.user.isGM) {
+            let msg = setting("turn-message");
+
+            let context = {
+                combatant
+            };
+
+            const compiled = Handlebars.compile(msg);
+            msg = compiled(context, { allowProtoMethodsByDefault: true, allowProtoPropertiesByDefault: true }).trim();
+
             if (setting("large-print")) {
-                $('#your-turn').addClass("current").removeClass("next").html(setting("turn-message")).addClass("show");
+                $('#your-turn').addClass("current").removeClass("next").html(msg).addClass("show");
                 window.setTimeout(() => { $("#your-turn").removeClass("show current"); }, 2000);
             } else
-                ui.notifications.warn(setting("turn-message"));
+                ui.notifications.warn(msg);
         } 
 
         // play a sound
-        if (setting('play-turn-sound') && setting('turn-sound') != '') { //volume() > 0 && !setting("disablesounds") && 
-            //let volume = (setting('volume') / 100) * game.settings.get("core", 'globalInterfaceVolume');
-            //AudioHelper.play({ src: setting('turn-sound'), volume:volume }); //, volume: volume()
-            CombatTurn.playTurnSounds('turn');
+        if (setting('play-turn-sound') && setting('turn-sound') != '') {
+            CombatTurn.playTurnSounds(combatant.combat, 'turn');
         }
     }
 
-    static doDisplayNext() {
+    static doDisplayNext(combatant) {
         if (setting("shownextup") && !game.user.isGM) {
+            let msg = setting("nextup-message");
+
+            let context = {
+                combatant
+            };
+
+            const compiled = Handlebars.compile(msg);
+            msg = compiled(context, { allowProtoMethodsByDefault: true, allowProtoPropertiesByDefault: true }).trim();
+
             if (setting("large-print")) {
-                $('#your-turn').addClass("next").removeClass("current").html(setting("nextup-message")).addClass("show");
+                $('#your-turn').addClass("next").removeClass("current").html(msg).addClass("show");
                 window.setTimeout(() => { $("#your-turn").removeClass("show next"); }, 2000);
             } else 
-                ui.notifications.info(setting("nextup-message"));
+                ui.notifications.info(msg);
         }
         // play a sound
-        if (setting('play-next-sound') && setting('next-sound') != '') { //volume() > 0 && !setting("disablesounds") && 
-            //let volume = (setting('volume') / 100) * game.settings.get("core", 'globalInterfaceVolume');
-            //AudioHelper.play({ src: setting('next-sound'), volume: volume }); //, volume: volume()
-            CombatTurn.playTurnSounds('next');
+        if (setting('play-next-sound') && setting('next-sound') != '') {
+            CombatTurn.playTurnSounds(combatant.combat, 'next');
         }
     }
 
@@ -322,6 +338,8 @@ export class CombatTurn {
         debug('checking combat started', combat, combat?.started);
         if (combat && combat.started) {
             let entry = combat.combatant;
+
+            if (entry == undefined) return;
 
             let findNext = function (from) {
                 let next = null;
@@ -347,37 +365,51 @@ export class CombatTurn {
                 next = findNext(-1);
 
             let isActive = entry?.actor?.isOwner;
-            let nxtentry = null;
+            let nextentry = null;
             let isNext = false;
 
             if (next != null) {
-                nxtentry = combat.turns[next];
-                isNext = nxtentry.actor?.isOwner; //_id === game.users.current.character?._id;
+                nextentry = combat.turns[next];
+                isNext = nextentry.actor?.isOwner; //_id === game.users.current.character?._id;
             }
 
-            debug('Check combat turn', entry?.name, nxtentry?.name, !game.user.isGM, isActive, isNext, entry, nxtentry);
-            if (entry !== undefined) {
-                if (isActive) {
-                    CombatTurn.doDisplayTurn();
-                } else if (isNext) {
-                    if (game.modules.get("hidden-initiative")?.active && combat.round == 1 && !game.user.isGM)  //If hidden initiatives is active, then don't show up next information
-                        return;
+            debug('Check combat turn', entry?.name, nextentry?.name, !game.user.isGM, isActive, isNext, entry, nextentry);
+            if (isActive) {
+                if (combat._mcd_yourturn != entry._id) {
+                    CombatTurn.doDisplayTurn(entry);
+                }
+            } else if (isNext) {
+                if (game.modules.get("hidden-initiative")?.active && combat.round == 1 && !game.user.isGM)  //If hidden initiatives is active, then don't show up next information
+                    return;
 
-                    CombatTurn.doDisplayNext();
+                if (combat._mcd_nextturn != nextentry._id) {
+                    CombatTurn.doDisplayNext(nextentry);
                 }
             }
+
+            combat._mcd_yourturn = entry._id;
+            combat._mcd_nextturn = nextentry._id
         }
     }
 
-    static async playTurnSounds(turn) {
+    static async playTurnSounds(combat, turn) {
         const audiofiles = await CombatTurn.getTurnSounds(turn);
 
         //audiofiles = audiofiles.filter(i => (audiofiles.length === 1) || !(i === this._lastWildcard));
         if (audiofiles.length > 0) {
             const audiofile = audiofiles[Math.floor(Math.random() * audiofiles.length)];
 
-            let volume = (setting('volume') / 100);
-            AudioHelper.play({ src: audiofile, volume: volume });
+            let volume = (setting('volume') / 100) * getVolume();
+            AudioHelper.play({ src: audiofile, volume: volume }).then((sound) => {
+                combat.turnsound = sound;
+                combat.turnsound.on("stop", () => {
+                    delete combat.turnsound;
+                });
+                combat.turnsound.on("end", () => {
+                    delete combat.turnsound;
+                });
+                combat.turnsound.effectiveVolume = volume;
+            });
         }
     }
 
@@ -414,4 +446,26 @@ export class CombatTurn {
 
 Hooks.on("drawGridLayer", function (layer) {
     layer.shadows = layer.addChildAt(new PIXI.Container(), layer.getChildIndex(layer.borders));
+});
+
+Hooks.on("globalAmbientVolumeChanged", (volume) => {
+    if (!game.modules.get("monks-sound-enhancements")?.active) {
+        for (let combat of game.combats) {
+            if (combat.active && combat.turnsound) {
+                if (combat.turnsound.effectiveVolume != undefined) {
+                    combat.turnsound.volume = volume * (combat.turnsound.effectiveVolume ?? 1);
+                }
+            }
+        }
+    }
+});
+
+Hooks.on("globalSoundEffectVolumeChanged", (volume) => {
+    for (let combat of game.combats) {
+        if (combat.active && combat.turnsound) {
+            if (combat.turnsound.effectiveVolume != undefined) {
+                combat.turnsound.volume = volume * (combat.turnsound.effectiveVolume ?? 1);
+            }
+        }
+    }
 });

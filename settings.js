@@ -55,15 +55,17 @@ export const registerSettings = function () {
 		default: true,
 		type: Boolean,
 	});
+
 	game.settings.register(modulename, "prevent-combat-spells", {
 		name: i18n("MonksCombatDetails.prevent-combat-spells.name"),
 		hint: i18n("MonksCombatDetails.prevent-combat-spells.hint"),
 		scope: "world",
-		config: true,
+		config: game.system.id == "dnd5e",
 		choices: spelloptions,
 		default: true,
 		type: String,
 	});
+
 	game.settings.register(modulename, "enable-placeholders", {
 		name: i18n("MonksCombatDetails.enable-placeholders.name"),
 		hint: i18n("MonksCombatDetails.enable-placeholders.hint"),
@@ -160,10 +162,27 @@ export const registerSettings = function () {
 		type: Boolean
 	});
 
+	game.settings.register(modulename, "show-combatant-sheet", {
+		name: i18n("MonksCombatDetails.show-combatant-sheet.name"),
+		hint: i18n("MonksCombatDetails.show-combatant-sheet.hint"),
+		scope: "world",
+		config: true,
+		default: false,
+		type: Boolean
+	});
+
 	//combat tracker
 	game.settings.register(modulename, "switch-combat-tab", {
 		name: i18n("MonksCombatDetails.switch-combat-tab.name"),
 		hint: i18n("MonksCombatDetails.switch-combat-tab.hint"),
+		scope: "world",
+		config: true,
+		default: true,
+		type: Boolean
+	});
+	game.settings.register(modulename, "switch-chat-tab", {
+		name: i18n("MonksCombatDetails.switch-chat-tab.name"),
+		hint: i18n("MonksCombatDetails.switch-chat-tab.hint"),
 		scope: "world",
 		config: true,
 		default: true,

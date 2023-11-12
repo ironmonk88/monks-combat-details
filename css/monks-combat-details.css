@@ -89,23 +89,23 @@ body.system-sw5e #chat-log .message.round-marker {
 #chat-log .message.round-marker .message-header .message-sender,
 #chat-log .message.round-marker .message-header .message-timestamp,
 #chat-log .message.round-marker .message-content {
-    display: none;
+    display: none !important;
     border-bottom: none !important;
     padding: 0px
 }
 
 #chat-log .message.round-marker .message-header .flavor-text {
     flex: 1;
-    color: #f0f0e0;
+    color: #f0f0e0 !important;
     grid-area: unset;
 }
 
 body.light-theme.system-sw5e #chat-log .message.round-marker .message-header .flavor-text {
-    color: #c40f0f;
+    color: #c40f0f !important;
 }
 
 body.dark-theme.system-sw5e #chat-log .message.round-marker .message-header .flavor-text {
-    color: #E81111;
+    color: #E81111 !important;
     font-weight: bold;
     text-shadow: 2px 2px #363636;
 }

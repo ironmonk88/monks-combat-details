@@ -1,6 +1,6 @@
 {
-	"MonksCombatDetails.Turn": "It's your turn, what would you like to do?",
-	"MonksCombatDetails.Next": "Get ready, you're up next",
+	"MonksCombatDetails.Turn": "It's your turn {{combatant.name}}, what would you like to do?",
+	"MonksCombatDetails.Next": "Get ready {{combatant.name}}, you're up next",
 
 	"MonksCombatDetails.shownextup.name": "Show 'Next Up' notification",
 	"MonksCombatDetails.shownextup.hint": "Show notification to the players that their turn is next",
@@ -22,6 +22,8 @@
 	"MonksCombatDetails.opencombat.hint": "When starting a combat, popout the dialog, and switch to the chat window",
 	"MonksCombatDetails.switch-combat-tab.name": "Switch to Combat Tab",
 	"MonksCombatDetails.switch-combat-tab.hint": "When a combat is created automatically switch to the combat tab",
+	"MonksCombatDetails.switch-chat-tab.name": "Switch to Chat Tab",
+	"MonksCombatDetails.switch-chat-tab.hint": "When a combat is started automatically switch to the chat tab",
 	"MonksCombatDetails.disable-opencombat.name": "Disable the combat popout",
 	"MonksCombatDetails.disable-opencombat.hint": "If you'd rather the combat not popout when combat starts",
 	"MonksCombatDetails.close-combat-when-done.name": "Close Combat when done",
@@ -79,7 +81,9 @@
 	"MonksCombatDetails.remember-position.name": "Remeber Position",
 	"MonksCombatDetails.remember-position.hint": "Remember the position of the combat tracker between combats",
 	"MonksCombatDetails.combat-alert.name": "Combat Alert",
-  "MonksCombatDetails.combat-alert.hint": "Show an alert icon when combat is created",
+	"MonksCombatDetails.combat-alert.hint": "Show an alert icon when combat is created",
+	"MonksCombatDetails.show-combatant-sheet.name": "Show Combatant Sheet",
+	"MonksCombatDetails.show-combatant-sheet.hint": "Show the combatant sheet on a combatants turn",
 
 	"MonksCombatDetails.Round": "Round",
 	"MonksCombatDetails.RoundEnd": "Round End",

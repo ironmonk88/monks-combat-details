@@ -55,6 +55,13 @@ export let patchFunc = (prop, func, type = "WRAPPER") => {
     }
 }
 
+export let getVolume = () => {
+    if (game.modules.get("monks-sound-enhancement")?.active)
+        return game.settings.get("core", "globalSoundEffectVolume");
+    else
+        return game.settings.get("core", "globalAmbientVolume");
+}
+
 export class MonksCombatDetails {
     static tracker = false;
 
@@ -138,13 +145,13 @@ export class MonksCombatDetails {
                     title: i18n("MonksCombatDetails.NotAllInitTitle"),
                     content: i18n("MonksCombatDetails.NotAllInitContent"),
                     yes: () => {
-                        if (ui.sidebar.activeTab == "combat")
+                        if (ui.sidebar.activeTab == "combat" && setting("switch-chat-tab"))
                             ui.sidebar.activateTab("chat");
                         return wrapped.call(this);
                     }
                 })
             } else {
-                if (ui.sidebar.activeTab == "combat")
+                if (ui.sidebar.activeTab == "combat" && setting("switch-chat-tab"))
                     ui.sidebar.activateTab("chat");
                 return wrapped.call(this);
             }
@@ -192,28 +199,25 @@ export class MonksCombatDetails {
             }
         }
 
+        let isVisible = function() {
+            if (this.hidden) return this.isOwner;
+            if ((setting('hide-enemies') && !this.combat.started) || (setting("hide-until-turn") && this.combat.started && getProperty(this, "flags.monks-combat-details.reveal") !== true)) {
+                if (this.combat && !game.user.isGM) {
+                    let idx = this.combat.turns.findIndex(t => t.id == this.id);
+                    return this.hasPlayerOwner || (this.combat.started && (this.combat.round > 1 || !setting("hide-until-turn") || this.combat.turn >= idx));
+                }
+            }
+            return true;
+        }
+
         if (game.modules.get("combat-tracker-dock")?.active) {
             patchFunc("Combatant.prototype.visible", function (wrapped, ...args) {
-                if (this.hidden) return this.isOwner;
-                if ((setting('hide-enemies') && !this.combat.started) || (setting("hide-until-turn") && this.combat.started && getProperty(this, "flags.monks-combat-details.reveal" ) !== true)) {
-                    if (this.combat && !game.user.isGM) {
-                        let idx = this.combat.turns.findIndex(t => t.id == this.id);
-                        return this.hasPlayerOwner || (this.combat.started && (this.combat.round > 1 || !setting("hide-until-turn") || this.combat.turn >= idx));
-                    }
-                }
-                return wrapped(...args);
-            }, "MIXED");
+                return wrapped(...args) && isVisible.call(this);
+            }, "WRAPPER");
         } else {
             Object.defineProperty(Combatant.prototype, "visible", {
-                get: function() {
-                    if (this.hidden) return this.isOwner;
-                    if ((setting('hide-enemies') && !this.combat.started) || (setting("hide-until-turn") && this.combat.started && getProperty(this, "flags.monks-combat-details.reveal") !== true)) {
-                        if (this.combat && !game.user.isGM) {
-                            let idx = this.combat.turns.findIndex(t => t.id == this.id);
-                            return this.hasPlayerOwner || (this.combat.started && (this.combat.round > 1 || !setting("hide-until-turn") || this.combat.turn >= idx));
-                        }
-                    }
-                    return true;
+                get: function () {
+                    return isVisible.call(this);
                 }
             });
         }
@@ -552,6 +556,10 @@ export class MonksCombatDetails {
             token._object?.refresh();
         }
     }
+
+    static async CheckCritcalEffect(hp, actor) {
+        //log("HP change", hp, actor.system.status.wounds);
+    }
 }
 
 Hooks.once('init', MonksCombatDetails.init);
@@ -650,6 +658,21 @@ Hooks.on("updateCombat", async function (combat, delta) {
             return game.combats.viewed.update(updateData);
         }
     }
+
+    if (game.user.isGM && setting("show-combatant-sheet")) {
+        if (!combat.combatant.actor.hasPlayerOwner) {
+            if (!MonksCombatDetails.combatantSheet || MonksCombatDetails.combatantSheet.state == -1) {
+                MonksCombatDetails.combatantSheet = combat.combatant.actor.sheet.render(true);
+            } else {
+                if (MonksCombatDetails.combatantSheet.object.id != combat.combatant.actor.id) {
+                    delete MonksCombatDetails.combatantSheet.object.apps[MonksCombatDetails.combatantSheet.appId]
+                    MonksCombatDetails.combatantSheet._state = 2;
+                    MonksCombatDetails.combatantSheet.object = combat.combatant.actor;
+                    MonksCombatDetails.combatantSheet.render(true);
+                }
+            }
+        }
+    }
 });
 
 /*
@@ -681,7 +704,7 @@ Hooks.on('renderCombatTracker', async (app, html, data) => {
         //calculate CR
         let crdata = MonksCombatDetails.getCR(data.combat);
 
-        if ($('#combat-round .encounter-cr-row').length == 0 && data.combat.combatants.size > 0) {
+        if ($('#combat-round .encounter-cr-row', html).length == 0 && data.combat.combatants.size > 0) {
             let crChallenge = MonksCombatDetails.crChallenge[0];
             let epicness = '';
             let crText = '';
@@ -705,8 +728,15 @@ Hooks.on('renderCombatTracker', async (app, html, data) => {
 
     //don't show the previous or next turn if this isn't the GM
     if (!game.user.isGM && data.combat && data.combat.started) {
-        $('.combat-control[data-control="previousTurn"],.combat-control[data-control="nextTurn"]:last').css({visibility:'hidden'});
+        $('.combat-control[data-control="previousTurn"],.combat-control[data-control="nextTurn"]:last', html).css({visibility:'hidden'});
     }
+
+    $(".token-effects .token-effect", html).each((i, el) => {
+        let effect = CONFIG.statusEffects.find(e => e.id === el.dataset.statusId || e.icon == el.getAttribute("src"));
+        if (effect) {
+            $(el).attr("data-tooltip", i18n(effect.label));
+        }
+    });
 });
 
 Hooks.on("renderSettingsConfig", (app, html, data) => {
@@ -764,6 +794,23 @@ Hooks.on("preUpdateActor", async function (document, data, options, userid) {
     if (game.system.id == "cyberpunk-red-core")
         hp = getProperty(data, 'system.derivedStats.hp.value');
     MonksCombatDetails.AutoDefeated(hp, document, document.token);
+
+    if (setting("prevent-combat-spells") != "false" && !game.user.isGM && userid == game.user.id && getProperty(data, "system.spells") != undefined) {
+        //Is this actor involved in a combat
+        if (document.inCombat) {
+            let spells = getProperty(data, "system.spells");
+            let spellId = Object.keys(spells).find(k => k.startsWith("spell"));
+            if (spellId) {
+                if (setting("prevent-combat-spells") == "prevent") {
+                    ui.notifications.warn(i18n("MonksCombatDetails.CantChangeSpells"));
+                    delete data.system.spells[spellId];
+                } else if (setting("prevent-combat-spells") == "true") {
+                    let level = parseInt(spellId.replace("spell", ""));
+                    MonksCombatDetails.emit('spellChange', { user: game.user.id, actor: document.id, name: `Spell Level: ${level}` });
+                }
+            }
+        }
+    }
 });
 
 Hooks.on("updateToken", async function (document, data, options, userid) {
@@ -814,27 +861,6 @@ Hooks.on("renderCombatTrackerConfig", (app, html, data) => {
         .insertBefore($('input[name="skipDefeated"]', html).closest(".form-group"));
 
     app.setPosition({ height: 'auto' });
-});
-
-Hooks.on("preUpdateItem", (item, data, options, user) => {
-    if (setting("prevent-combat-spells") != "false" && !game.user.isGM && user == game.user.id && getProperty(data, "system.preparation.prepared") != undefined) {
-        //Is this actor involved in a combat
-        let inCombat = game.combats.some(c => {
-            return c.started && c.active && c.turns.some(t => t.actorId == item.actor.id);
-        });
-
-        if (inCombat) {
-            if (setting("prevent-combat-spells") == "prevent") {
-                ui.notifications.warn(i18n("MonksCombatDetails.CantChangeSpells"));
-                delete data.system.preparation.prepared;
-                if (Object.keys(data.system.preparation).length == 0) delete data.system.preparation;
-                if (Object.keys(data.system).length == 0) delete data.system;
-                if (Object.keys(data).length == 0 || (Object.keys(data).length == 1 && Object.keys(data)[0] == "_id")) return false;
-            } else if (setting("prevent-combat-spells") == "true") {
-                MonksCombatDetails.emit('spellChange', { user: game.user.id, actor: item.actor.id, name: item.name });
-            }
-        }
-    }
 });
 
 Hooks.on("getCombatTrackerEntryContext", (html, menu) => {

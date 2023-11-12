@@ -1,3 +1,29 @@
+# version 11.09
+
+Fixed the Round messages in SW5e
+
+Fixed finding next turn for a token that has no actor
+
+Fixed issue with showing your turn and next turn messages multiple times when combat is updated
+
+Fixed issue with selecting combatants on turn for players
+
+Added the option to include handlebar information in turn notification messages.
+
+Fixed issue with playing Actor sound at start of the turn not respecting the volume properly.
+
+Integrated with Monk's Sound Enhancements to allow changing the Sound Effect volume to affect Actor sound played at the start of turn.
+
+Added the option to not change to the chat tab when combat starts
+
+Cleared up the functionality when checking to see if the combatant should be shown in the tracker
+
+Added the option to show the current character sheet on a combatants turn.
+
+Added tooltips to effects shown in the combat tracker
+
+Fixed issues with preventing combat spells in DnD 5e.
+
 # version 11.08
 
 Fixed issue with players not being able to role initiative.
