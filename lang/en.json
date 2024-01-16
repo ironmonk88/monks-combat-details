@@ -78,7 +78,7 @@
 	"MonksCombatDetails.popout-when.hint": "Set if the popup happens at the start of combat or when it is created",
 	"MonksCombatDetails.reroll-initiative.name": "Reroll Initiative",
 	"MonksCombatDetails.reroll-initiative.hint": "Reroll initiative every round",
-	"MonksCombatDetails.remember-position.name": "Remeber Position",
+	"MonksCombatDetails.remember-position.name": "Remember Position",
 	"MonksCombatDetails.remember-position.hint": "Remember the position of the combat tracker between combats",
 	"MonksCombatDetails.combat-alert.name": "Combat Alert",
 	"MonksCombatDetails.combat-alert.hint": "Show an alert icon when combat is created",
@@ -141,7 +141,13 @@
 	"MonksCombatDetails.autodefeated.all-zero": "Everyone Zero HP",
 	"MonksCombatDetails.autodefeated.all-negative": "Everyone Negative HP",
 
+	"MonksCombatDetails.placeholderoptions.sidebar": "Sidebar",
+	"MonksCombatDetails.placeholderoptions.popout": "Popout",
+	"MonksCombatDetails.placeholderoptions.both": "Both",
+	"MonksCombatDetails.placeholderoptions.none": "None",
+
 	"MonksCombatDetails.spelloptions.prevent": "Prevent Change",
+	"MonksCombatDetails.spelloptions.both": "Prevent Change, and Show Chat Message",
 	"MonksCombatDetails.spelloptions.true": "Show Chat Message",
 	"MonksCombatDetails.spelloptions.false": "Ignore"
 }

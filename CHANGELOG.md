@@ -1,3 +1,29 @@
+# version 11.10
+
+Added the option to display the placeholder button on both the sidebar and popout.
+
+Fixed issue when there's no detected next combatant
+
+Fixed issue with autoscrolling not detecting the top properly.
+
+Added API for creating placeholders, so you can now use a Macro to create a placeholder.
+
+Fixed issue with Warlock pact spell slots not prevented from being changed
+
+Fixed issue where multiple spell slot changes would ignore any above the first change.
+
+Fixed issue where spells were no longer able to be cast.
+
+Added the option to prevent spell changes *and* send a notification
+
+Fixed issue where auto defeated wasn't being set properly for player characters.
+
+Fixed issue where the delete placeholder dialog would delete the currently viewed combatant rather than the actual placeholder.
+
+Fixed issue where showing the combatant sheet was showing any time a change was made rather than when the combatant's turn starts.
+
+Added MATT integration to create a placeholder using a trigger.
+
 # version 11.09
 
 Fixed the Round messages in SW5e

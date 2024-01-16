@@ -3,7 +3,7 @@ import { MonksCombatDetails, i18n, log, debug, setting, patchFunc } from "../mon
 export class PlaceholderCombatant {
     static init() {
         Hooks.on("renderCombatTracker", (app, html, data) => {
-            if (game.user.isGM && !app.popOut && app.viewed) {
+            if (game.user.isGM && (setting("enable-placeholders") == "both" || (setting("enable-placeholders") == "true" && !app.popOut) || (setting("enable-placeholders") == "popout" && app.popOut)) && app.viewed) {
                 $('<nav>').addClass("directory-footer flexrow add-placeholder").append(
                     $("<a>").html(`<i class="fa fa-plus"></i> ${i18n("MonksCombatDetails.AddPlaceholder")}`).on("click", PlaceholderCombatant.addPlaceholder.bind(this, app)))
                     .insertBefore($("#combat-controls", html));
@@ -80,6 +80,35 @@ export class PlaceholderCombatant {
             }  
         }
         new PlaceholderCombatantConfig(combatant).render(true);
+    }
+
+    static createPlaceholder({ combat, combatant, initiative, removeAfter, img, name, hidden } = {}) {
+        combat = combat ?? game.combats.viewed;
+        if (combat?.started) {
+            let combatantData = { initiative, name, img, hidden, flags: { 'monks-combat-details': { placeholder: true, removeStart: combat.round } } };
+            if (combatant) {
+                combatantData.actorId = combatant.actorId;
+                combatantData.tokenId = combatant.tokenId;
+            }
+
+            if (!combatantData.initiative) {
+                combatant = combatant ?? combat.combatant;
+                if (combatant?.initiative) {
+                    combatantData.initiative = combatant.initiative - 1;
+                    if (combat.nextCombatant?.initiative) {
+                        let diff = combatant.initiative - combat.nextCombatant?.initiative;
+                        if (diff <= 1 && diff >= 0)
+                            // set combatant initiative to halfway between current and next combatant round to one decimal place
+                            combatantData.initiative = Math.round((combatant.initiative + combat.nextCombatant?.initiative) / 2 * 10) / 10;
+                    }
+                }
+            }
+
+            if (removeAfter)
+                combatantData.flags['monks-combat-details'].removeAfter = removeAfter;
+
+            combat.createEmbeddedDocuments("Combatant", [combatantData]);
+        }
     }
 }
 

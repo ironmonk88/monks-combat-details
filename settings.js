@@ -29,6 +29,7 @@ export const registerSettings = function () {
 
 	let spelloptions = {
 		'prevent': i18n("MonksCombatDetails.spelloptions.prevent"),
+		'both': i18n("MonksCombatDetails.spelloptions.both"),
 		'true': i18n("MonksCombatDetails.spelloptions.true"),
 		'false': i18n("MonksCombatDetails.spelloptions.false")
 	}
@@ -36,6 +37,13 @@ export const registerSettings = function () {
 	let popoutoptions = {
 		'created': i18n("MonksCombatDetails.CombatCreated"),
 		'starts': i18n("MonksCombatDetails.CombatStarts"),
+	}
+
+	let placeholderoptions = {
+		'true': i18n("MonksCombatDetails.placeholderoptions.sidebar"),
+		'popout': i18n("MonksCombatDetails.placeholderoptions.popout"),
+		'both': i18n("MonksCombatDetails.placeholderoptions.both"),
+        'false': i18n("MonksCombatDetails.placeholderoptions.none")
     }
 
 	// combat preparation
@@ -71,8 +79,9 @@ export const registerSettings = function () {
 		hint: i18n("MonksCombatDetails.enable-placeholders.hint"),
 		scope: "world",
 		config: true,
-		default: true,
-		type: Boolean,
+		choices: placeholderoptions,
+		default: "true",
+		type: String,
 	});
 	game.settings.register(modulename, "show-combat-cr", {
 		name: i18n("MonksCombatDetails.show-combat-cr.name"),

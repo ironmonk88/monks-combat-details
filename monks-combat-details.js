@@ -74,6 +74,10 @@ export class MonksCombatDetails {
         return true;
     };
 
+    static createPlaceholder(options = {}) {
+        PlaceholderCombatant.createPlaceholder(options);
+    }
+
     static init() {
         if (game.MonksCombatDetails == undefined)
             game.MonksCombatDetails = MonksCombatDetails;
@@ -120,8 +124,21 @@ export class MonksCombatDetails {
 
         if (setting('add-combat-bars'))
             CombatBars.init();
-        if (setting("enable-placeholders"))
+        if (setting("enable-placeholders") != "false")
             PlaceholderCombatant.init();
+
+        if (game.system.id == 'dnd5e') {
+            patchFunc("CONFIG.Item.documentClass.prototype.use", async function (wrapped, ...args) {
+                if (this.type == "spell") {
+                    this.parent._castingSpell = true;
+                }
+                let result = await wrapped(...args);
+                if (this.type == "spell") {
+                    this.parent._castingSpell = false;
+                }
+                return result;
+            });
+        }
 
         patchFunc("CombatTrackerConfig.prototype._updateObject", async (wrapped, ...args) => {
             let [event, formData] = args;
@@ -525,7 +542,7 @@ export class MonksCombatDetails {
             let actor = game.actors.find(a => a.id == data.actor);
             ChatMessage.create({
                 user: game.user,
-                content: `<i>${player?.name}</i> has changed prepared spells (${data.name}) for <b>${actor?.name}</b> while token is in combat.`,
+                content: `<i>${player?.name}</i> ${setting("prevent-combat-spells") == "both" ? 'attempted to change' : 'has changed'} prepared spells (${data.name.join(", ")}) for <b>${actor?.name}</b> while token is in combat.`,
                 whisper: whisper
             });
         }
@@ -537,6 +554,7 @@ export class MonksCombatDetails {
 
     static async AutoDefeated(hp, actor, token) {
         if (setting('auto-defeated') != 'none' && game.user.isGM) {
+            token = token || game.combats?.viewed?.combatants.find(c => c.actor.id == actor.id)?.token;
             if (hp != undefined && (setting('auto-defeated').startsWith('all') || token?.disposition != 1)) {
                 let combatant = token?.combatant;
 
@@ -637,12 +655,13 @@ Hooks.on("updateCombat", async function (combat, delta) {
     if (game.user.isTheGM && combat.combatant?.getFlag("monks-combat-details", "placeholder")) {
         let removeAfter = combat.combatant?.getFlag("monks-combat-details", "removeAfter");
         if (removeAfter && removeAfter <= combat.round - combat.combatant.getFlag("monks-combat-details", "removeStart")) {
-            let img = combat.combatant.img || "icons/svg/mystery-man.svg";
+            let combatant = combat.combatant;
+            let img = combatant.img || "icons/svg/mystery-man.svg";
             Dialog.confirm({
                 title: i18n("MonksCombatDetails.RemovePlaceholderCombatant"),
-                content: `<div class="flexrow"><div style="flex:0 0 60px;"><img style="width: 50px;height: 50px;" src="${img}"></div><div>The placeholder combatant <b>${combat.combatant.name}</b> has used all the rounds remaining and will be removed from the combat.</div></div><p>Are you sure?</p>`,
+                content: `<div class="flexrow"><div style="flex:0 0 60px;"><img style="width: 50px;height: 50px;" src="${img}"></div><div>The placeholder combatant <b>${combatant.name}</b> has used all the rounds remaining and will be removed from the combat.</div></div><p>Are you sure?</p>`,
                 yes: () => {
-                    combat.combatant.delete();
+                    combatant.delete();
                 }
             })
         }
@@ -659,7 +678,7 @@ Hooks.on("updateCombat", async function (combat, delta) {
         }
     }
 
-    if (game.user.isGM && setting("show-combatant-sheet")) {
+    if (game.user.isGM && setting("show-combatant-sheet") && delta.turn != undefined) {
         if (!combat.combatant.actor.hasPlayerOwner) {
             if (!MonksCombatDetails.combatantSheet || MonksCombatDetails.combatantSheet.state == -1) {
                 MonksCombatDetails.combatantSheet = combat.combatant.actor.sheet.render(true);
@@ -796,19 +815,29 @@ Hooks.on("preUpdateActor", async function (document, data, options, userid) {
     MonksCombatDetails.AutoDefeated(hp, document, document.token);
 
     if (setting("prevent-combat-spells") != "false" && !game.user.isGM && userid == game.user.id && getProperty(data, "system.spells") != undefined) {
+        if (document._castingSpell) return;
+
         //Is this actor involved in a combat
         if (document.inCombat) {
             let spells = getProperty(data, "system.spells");
-            let spellId = Object.keys(spells).find(k => k.startsWith("spell"));
-            if (spellId) {
-                if (setting("prevent-combat-spells") == "prevent") {
-                    ui.notifications.warn(i18n("MonksCombatDetails.CantChangeSpells"));
-                    delete data.system.spells[spellId];
-                } else if (setting("prevent-combat-spells") == "true") {
-                    let level = parseInt(spellId.replace("spell", ""));
-                    MonksCombatDetails.emit('spellChange', { user: game.user.id, actor: document.id, name: `Spell Level: ${level}` });
+            let notify = false;
+            let changes = [];
+            for (let spellId of Object.keys(spells).filter(k => k.startsWith("spell") || k.startsWith("pact"))) {
+                if (spellId) {
+                    if (setting("prevent-combat-spells") == "prevent" || setting("prevent-combat-spells") == "both") {
+                        notify = true;
+                        delete data.system.spells[spellId];
+                    }
+                    if (setting("prevent-combat-spells") == "true" || setting("prevent-combat-spells") == "both") {
+                        let level = parseInt(spellId.replace("spell", ""));
+                        changes.push(spellId == "pact" ? "Pact Magic" : `Spell Level: ${level}`);
+                    }
                 }
             }
+            if (notify)
+                ui.notifications.warn(i18n("MonksCombatDetails.CantChangeSpells"));
+            if (changes.length > 0)
+                MonksCombatDetails.emit('spellChange', { user: game.user.id, actor: document.id, name: changes });
         }
     }
 });
@@ -906,4 +935,75 @@ Hooks.on("getCombatTrackerEntryContext", (html, menu) => {
 
 Hooks.on('dragEndCombatTracker', (app, position) => {
     game.user.setFlag("monks-combat-details", "combat-position", position);
-})
+});
+
+Hooks.on("setupTileActions", (app) => {
+    app.registerTileGroup('monks-combat-details', "Monk's Combat Details");
+    app.registerTileAction('monks-combat-details', 'placeholder', {
+        name: 'Add Combat Placeholder',
+        ctrls: [
+            {
+                id: "entity",
+                name: "Select Entity",
+                type: "select",
+                subtype: "entity",
+                options: { show: ['token', 'within', 'players', 'previous'] },
+                restrict: (entity) => { return (entity instanceof Token); },
+            },
+            {
+                id: "name",
+                name: "Display Name",
+                type: "text",
+                help: "Leave this blank to use the entity's name"
+            },
+            {
+                id: "image",
+                name: "Image",
+                type: "filepicker",
+                subtype: "imagevideo",
+                help: "Leave this blank to use the entity's image"
+            },
+            {
+                id: "hidden",
+                name: "Hidden",
+                type: "checkbox",
+                defvalue: false
+            },
+            {
+                id: "initiative",
+                name: "Initiative",
+                type: "text",
+                "class": "small-field"
+            },
+            {
+                id: "remove",
+                name: "Remove After",
+                type: "text",
+                "class": "small-field"
+            },
+        ],
+        group: 'monks-combat-details',
+        fn: async (args = {}) => {
+            const { action } = args;
+
+            let entities = await game.MonksActiveTiles.getEntities(args);
+
+            let combat = game.combats.viewed;
+            for (let entity of entities) {
+                if (entity instanceof TokenDocument) {
+                    let combatant = combat.combatants.find(c => c.token?.id == entity.id) || { actorId: entity.actor.id, tokenId: entity.id };
+                    let initiative = action.data.initiative ? await game.MonksActiveTiles.getValue(action.data.initiative, args) : null;
+                    let removeAfter = action.data.remove ? await game.MonksActiveTiles.getValue(action.data.remove, args) : null;
+                    let name = action.data.name ? await game.MonksActiveTiles.getValue(action.data.name, args) : null;
+
+                    PlaceholderCombatant.createPlaceholder({ combatant, initiative, removeAfter, name, img: action.data.image, hidden: action.data.hidden });
+                }
+            }
+            
+        },
+        content: async (trigger, action) => {
+            let entityName = await game.MonksActiveTiles.entityName(action.data?.entity);
+            return `<span class="action-style">${trigger.name}</span> of <span class="entity-style">${entityName}</span>${!!action.data?.initiative ? ` at <span class="details-style">"${action.data?.initiative}"</span>` : ''}${!!action.data?.remove ? ` remove after <span class="value-style">&lt;${action.data?.remove}&gt;"</span> rounds` : ''}`;
+        }
+    });
+});

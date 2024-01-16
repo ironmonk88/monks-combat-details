@@ -151,7 +151,8 @@ export class CombatTurn {
                     $(this).parent().scrollTop(Math.max(this.offsetTop, 0)); // - $(this).height()
                 });
                 $(`#combat-popout #combat-tracker li[data-combatant-id="${combat.current.combatantId}"]`).each(function () {
-                    $(this).parent().scrollTop(Math.max(this.offsetTop - 96, 0)); // - $(this).height()
+                    $(this).parent().scrollTop(Math.max(this.offsetTop - $('#combat-popout .combat-tracker-header').height() - 32, 0)); // - $(this).height()
+                    //this.scrollIntoView({ behavior: "smooth" });
                 });
             }
 
@@ -387,8 +388,8 @@ export class CombatTurn {
                 }
             }
 
-            combat._mcd_yourturn = entry._id;
-            combat._mcd_nextturn = nextentry._id
+            combat._mcd_yourturn = entry?._id;
+            combat._mcd_nextturn = nextentry?._id
         }
     }
 
