@@ -96,7 +96,7 @@ export class CombatTurn {
                 }
             }
 
-            if (combat && combat.started && setting('select-combatant')) {
+            if (combat && combat.started && combat?.combatant?.token?.isOwner && setting('select-combatant')) {
                 combat?.combatant?.token?._object?.control();
             }
 

@@ -473,6 +473,13 @@ export const registerSettings = function () {
 		type: Boolean
 	});
 
+	game.settings.register(modulename, "combat-playlist", {
+		scope: "world",
+		config: false,
+		default: "",
+		type: String
+	});
+
 	game.settings.register(modulename, "transfer-settings", {
 		scope: "world",
 		config: false,

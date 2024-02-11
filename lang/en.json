@@ -106,6 +106,7 @@
 	"MonksCombatDetails.RemoveAfter": "Remove After (rounds)",
 	"MonksCombatDetails.RemovePlaceholderCombatant": "Remove Placeholder Combatant",
 	"MonksCombatDetails.RerollInitiative": "Reroll Initiative",
+	"MonksCombatDetails.CombatPlaylist": "Combat Playlist",
 
 	"MonksCombatDetails.PreventTokenMessage": "Once in combat, a token cannot be removed except through the encounter interface.",
 

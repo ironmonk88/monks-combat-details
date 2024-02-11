@@ -1,3 +1,11 @@
+# version 11.11
+
+Fixed round marker background changes in the new 5e version
+
+Possibly fixed controlling a token that players shouldn't be able to control.
+
+Added the option to play a combat playlist when combat starts.
+
 # version 11.10
 
 Added the option to display the placeholder button on both the sidebar and popout.

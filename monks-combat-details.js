@@ -144,6 +144,40 @@ export class MonksCombatDetails {
             let [event, formData] = args;
             game.settings.set("monks-combat-details", "hide-defeated", formData.hideDefeated);
             game.settings.set("monks-combat-details", "reroll-initiative", formData.rerollInitiative);
+            if (formData.combatPlaylist != setting("combat-playlist")) {
+                if (game.combats.active?.active && game.combats.active?.started) {
+                    if (setting("combat-playlist")) {
+                        const playlist = game.playlists.get(setting("combat-playlist"));
+                        if (playlist) {
+                            playlist.stopAll();
+                        }
+                    } else {
+                        currentlyPlaying = ui.playlists._playingSounds.map(ps => ps.playing ? ps.uuid : null).filter(p => !!p);
+                        for (let playing of currentlyPlaying) {
+                            let sound = await fromUuid(playing);
+                            sound.update({ playing: false, pausedTime: sound.sound.currentTime });
+                        }
+                        await combat.setFlag("monks-enhanced-journal", "lastPlaying", currentlyPlaying);
+                    }
+
+                    if (formData.combatPlaylist) {
+                        const playlist = game.playlists.get(formData.combatPlaylist);
+                        if (playlist) {
+                            playlist.playAll();
+                        }
+                    } else {
+                        let lastPlaying = combat.getFlag("monks-enhanced-journal", "lastPlaying");
+                        if (lastPlaying) {
+                            for (let playing of lastPlaying) {
+                                let sound = await fromUuid(playing);
+                                if (sound)
+                                    sound.parent?.playSound(sound);
+                            }
+                        }
+                    }
+                }
+            }
+            game.settings.set("monks-combat-details", "combat-playlist", formData.combatPlaylist);
             $('#combat-popout').toggleClass("hide-defeated", formData.hideDefeated == true);
             return wrapped(...args);
         });
@@ -600,7 +634,7 @@ Hooks.on("createCombat", function (data, delta) {
     MonksCombatDetails.checkPopout(combat);
 });
 
-Hooks.on("deleteCombat", function (combat) {
+Hooks.on("deleteCombat", async function (combat) {
     MonksCombatDetails.tracker = false;   //if the combat gets deleted, make sure to clear this out so that the next time the combat popout gets rendered it repositions the dialog
 
     //if there are no more combats left, then close the combat window
@@ -623,6 +657,23 @@ Hooks.on("deleteCombat", function (combat) {
                 }
             }, 100);
         }
+    }
+
+    if (game.user.isTheGM && setting("combat-playlist")) {
+        const playlist = game.playlists.get(setting("combat-playlist"));
+        if (playlist) {
+            playlist.stopAll();
+        }
+
+        let lastPlaying = combat.getFlag("monks-enhanced-journal", "lastPlaying");
+        if (lastPlaying) {
+            for (let playing of lastPlaying) {
+                let sound = await fromUuid(playing);
+                if (sound)
+                    sound.parent?.playSound(sound);
+            }
+        }
+
     }
 });
 
@@ -678,6 +729,20 @@ Hooks.on("updateCombat", async function (combat, delta) {
         }
     }
 
+    if (game.user.isTheGM && setting("combat-playlist") && combat.started && delta.round == 1 && delta.turn == 0) {
+        let currentlyPlaying = ui.playlists._playingSounds.map(ps => ps.playing ? ps.uuid : null).filter(p => !!p);
+        for (let playing of currentlyPlaying) {
+            let sound = await fromUuid(playing);
+            sound.update({ playing: false, pausedTime: sound.sound.currentTime });
+        }
+        await combat.setFlag("monks-enhanced-journal", "lastPlaying", currentlyPlaying);
+
+        const playlist = game.playlists.get(setting("combat-playlist"));
+        if (playlist) {
+            playlist.playAll();
+        }
+    }
+
     if (game.user.isGM && setting("show-combatant-sheet") && delta.turn != undefined) {
         if (!combat.combatant.actor.hasPlayerOwner) {
             if (!MonksCombatDetails.combatantSheet || MonksCombatDetails.combatantSheet.state == -1) {
@@ -693,6 +758,7 @@ Hooks.on("updateCombat", async function (combat, delta) {
         }
     }
 });
+
 
 /*
 Hooks.on("createCombatant", async function (combatant, delta, userId) {
@@ -878,6 +944,16 @@ Hooks.on("updateCombatant", async function (combatant, data, options, userId) {
 });
 
 Hooks.on("renderCombatTrackerConfig", (app, html, data) => {
+    $('<div>').addClass("form-group")
+        .append($('<label>').html(i18n("MonksCombatDetails.CombatPlaylist")))
+        .append($('<select>').attr("name", "combatPlaylist")
+            .append($('<option>').attr("value", "").html(""))
+            .append(game.playlists.map((p) => {
+                return $('<option>').attr("value", p.id).html(p.name);
+            }
+            )).val(setting("combat-playlist")))
+        .insertAfter($('select[name="combatTheme"]', html).closest(".form-group"));
+
     $('<div>').addClass("form-group")
         .append($('<label>').html(i18n("MonksCombatDetails.HideDefeated")))
         .append($('<input>').attr("type", "checkbox").attr("name", "hideDefeated").attr('data-dtype', 'Boolean').prop("checked", setting("hide-defeated") == true))
