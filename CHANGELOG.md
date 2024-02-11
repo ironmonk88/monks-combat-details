@@ -1,3 +1,7 @@
+# version 11.12
+
+Fixed issues playing combat playlist
+
 # version 11.11
 
 Fixed round marker background changes in the new 5e version

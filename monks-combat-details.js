@@ -157,7 +157,7 @@ export class MonksCombatDetails {
                             let sound = await fromUuid(playing);
                             sound.update({ playing: false, pausedTime: sound.sound.currentTime });
                         }
-                        await combat.setFlag("monks-enhanced-journal", "lastPlaying", currentlyPlaying);
+                        await combat.setFlag("monks-combat-details", "lastPlaying", currentlyPlaying);
                     }
 
                     if (formData.combatPlaylist) {
@@ -166,7 +166,7 @@ export class MonksCombatDetails {
                             playlist.playAll();
                         }
                     } else {
-                        let lastPlaying = combat.getFlag("monks-enhanced-journal", "lastPlaying");
+                        let lastPlaying = combat.getFlag("monks-combat-details", "lastPlaying");
                         if (lastPlaying) {
                             for (let playing of lastPlaying) {
                                 let sound = await fromUuid(playing);
@@ -665,7 +665,7 @@ Hooks.on("deleteCombat", async function (combat) {
             playlist.stopAll();
         }
 
-        let lastPlaying = combat.getFlag("monks-enhanced-journal", "lastPlaying");
+        let lastPlaying = combat.getFlag("monks-combat-details", "lastPlaying");
         if (lastPlaying) {
             for (let playing of lastPlaying) {
                 let sound = await fromUuid(playing);
@@ -735,7 +735,7 @@ Hooks.on("updateCombat", async function (combat, delta) {
             let sound = await fromUuid(playing);
             sound.update({ playing: false, pausedTime: sound.sound.currentTime });
         }
-        await combat.setFlag("monks-enhanced-journal", "lastPlaying", currentlyPlaying);
+        await combat.setFlag("monks-combat-details", "lastPlaying", currentlyPlaying);
 
         const playlist = game.playlists.get(setting("combat-playlist"));
         if (playlist) {
