@@ -152,7 +152,7 @@ export class MonksCombatDetails {
                             playlist.stopAll();
                         }
                     } else {
-                        currentlyPlaying = ui.playlists._playingSounds.map(ps => ps.playing ? ps.uuid : null).filter(p => !!p);
+                        let currentlyPlaying = ui.playlists._playingSounds.map(ps => ps.playing ? ps.uuid : null).filter(p => !!p);
                         for (let playing of currentlyPlaying) {
                             let sound = await fromUuid(playing);
                             sound.update({ playing: false, pausedTime: sound.sound.currentTime });
