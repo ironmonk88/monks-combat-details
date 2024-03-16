@@ -64,6 +64,15 @@ export const registerSettings = function () {
 		type: Boolean,
 	});
 
+	game.settings.register(modulename, "order-initiative", {
+		name: i18n("MonksCombatDetails.order-initiative.name"),
+		hint: i18n("MonksCombatDetails.order-initiative.hint"),
+		scope: "client",
+		config: true,
+		default: true,
+		type: Boolean,
+	});
+
 	game.settings.register(modulename, "prevent-combat-spells", {
 		name: i18n("MonksCombatDetails.prevent-combat-spells.name"),
 		hint: i18n("MonksCombatDetails.prevent-combat-spells.hint"),

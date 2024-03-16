@@ -1,3 +1,9 @@
+# version 11.14
+
+Fixed issue with switching to the chat tab when combat starts
+
+Added the option to keep player characters that have not rolled initiative at the top of the list for them, so they don't move around when they're trying to press the roll initiative button.
+
 # version 11.12
 
 Fixed issues playing combat playlist

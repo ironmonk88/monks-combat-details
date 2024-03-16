@@ -196,14 +196,14 @@ export class MonksCombatDetails {
                     title: i18n("MonksCombatDetails.NotAllInitTitle"),
                     content: i18n("MonksCombatDetails.NotAllInitContent"),
                     yes: () => {
-                        if (ui.sidebar.activeTab == "combat" && setting("switch-chat-tab"))
-                            ui.sidebar.activateTab("chat");
+                        //if (ui.sidebar.activeTab == "combat" && setting("switch-chat-tab"))
+                        //    ui.sidebar.activateTab("chat");
                         return wrapped.call(this);
                     }
                 })
             } else {
-                if (ui.sidebar.activeTab == "combat" && setting("switch-chat-tab"))
-                    ui.sidebar.activateTab("chat");
+                //if (ui.sidebar.activeTab == "combat" && setting("switch-chat-tab"))
+                //    ui.sidebar.activateTab("chat");
                 return wrapped.call(this);
             }
         }
@@ -273,11 +273,24 @@ export class MonksCombatDetails {
             });
         }
 
-        patchFunc("CombatTracker.prototype.getData", async (wrapped, ...args) => {
+        patchFunc("CombatTracker.prototype.getData", async function (wrapped, ...args) {
             if (this.popOut)
                 args[0].resizable = true;
             return wrapped(...args);
         });
+
+        patchFunc("Combat.prototype._sortCombatants", function (wrapped, ...args) {
+            if (setting("order-initiative") && !game.user.isGM) {
+                let [a, b] = args;
+                let aTopOrder = !a.initiative && a.isOwner;
+                let bTopOrder = !b.initiative && b.isOwner;
+
+                if (aTopOrder != bTopOrder) {
+                    return aTopOrder ? -1 : 1;
+                }
+            }
+            return wrapped(...args);
+        }, "MIXED");
     }
 
     static async ready() {
@@ -1011,6 +1024,11 @@ Hooks.on("getCombatTrackerEntryContext", (html, menu) => {
 
 Hooks.on('dragEndCombatTracker', (app, position) => {
     game.user.setFlag("monks-combat-details", "combat-position", position);
+});
+
+Hooks.on('updateCombat', (combat, data, options, user) => {
+    if (ui.sidebar.activeTab == "combat" && setting("switch-chat-tab") && data.round == 1 && combat.started)
+        ui.sidebar.activateTab("chat");
 });
 
 Hooks.on("setupTileActions", (app) => {

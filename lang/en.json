@@ -84,6 +84,8 @@
 	"MonksCombatDetails.combat-alert.hint": "Show an alert icon when combat is created",
 	"MonksCombatDetails.show-combatant-sheet.name": "Show Combatant Sheet",
 	"MonksCombatDetails.show-combatant-sheet.hint": "Show the combatant sheet on a combatants turn",
+	"MonksCombatDetails.order-initiative.name": "Order Initiative",
+	"MonksCombatDetails.order-initiative.hint": "Order the initiative list so that a player's unrolled character is at the top for them",
 
 	"MonksCombatDetails.Round": "Round",
 	"MonksCombatDetails.RoundEnd": "Round End",
