@@ -86,6 +86,8 @@
 	"MonksCombatDetails.show-combatant-sheet.hint": "Show the combatant sheet on a combatants turn",
 	"MonksCombatDetails.order-initiative.name": "Order Initiative",
 	"MonksCombatDetails.order-initiative.hint": "Order the initiative list so that a player's unrolled character is at the top for them",
+	"MonksCombatDetails.show-combat-playlist.name": "Show Combat Playlist",
+	"MonksCombatDetails.show-combat-playlist.hint": "Show a dropdown for the combat playlist when setting up combat",
 
 	"MonksCombatDetails.Round": "Round",
 	"MonksCombatDetails.RoundEnd": "Round End",
@@ -109,6 +111,7 @@
 	"MonksCombatDetails.RemovePlaceholderCombatant": "Remove Placeholder Combatant",
 	"MonksCombatDetails.RerollInitiative": "Reroll Initiative",
 	"MonksCombatDetails.CombatPlaylist": "Combat Playlist",
+	"MonksCombatDetails.CombatPlaylistHint": "Select a playlist to play when combat starts.  Any currently playing tracks will be paused during combat and will resume once the combat has ended",
 
 	"MonksCombatDetails.PreventTokenMessage": "Once in combat, a token cannot be removed except through the encounter interface.",
 

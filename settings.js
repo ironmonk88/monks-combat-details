@@ -92,6 +92,18 @@ export const registerSettings = function () {
 		default: "true",
 		type: String,
 	});
+	game.settings.register(modulename, "show-combat-playlist", {
+		name: i18n("MonksCombatDetails.show-combat-playlist.name"),
+		hint: i18n("MonksCombatDetails.show-combat-playlist.hint"),
+		scope: "world",
+		config: true,
+		default: false,
+		type: Boolean,
+		onChange: (value) => {
+			// refresh the combat tracker
+			ui.combat.render();
+		}
+	});
 	game.settings.register(modulename, "show-combat-cr", {
 		name: i18n("MonksCombatDetails.show-combat-cr.name"),
 		hint: i18n("MonksCombatDetails.show-combat-cr.hint"),

@@ -280,13 +280,23 @@ export class MonksCombatDetails {
         });
 
         patchFunc("Combat.prototype._sortCombatants", function (wrapped, ...args) {
-            if (setting("order-initiative") && !game.user.isGM) {
-                let [a, b] = args;
-                let aTopOrder = !a.initiative && a.isOwner;
-                let bTopOrder = !b.initiative && b.isOwner;
+            if (setting("order-initiative")) {
+                if (!game.user.isGM) {
+                    let [a, b] = args;
+                    let aTopOrder = !a.initiative && a.isOwner;
+                    let bTopOrder = !b.initiative && b.isOwner;
 
-                if (aTopOrder != bTopOrder) {
-                    return aTopOrder ? -1 : 1;
+                    if (aTopOrder != bTopOrder) {
+                        return aTopOrder ? -1 : 1;
+                    }
+                } else {
+                    let [a, b] = args;
+                    let aTopOrder = !a.initiative && !a.hasPlayerOwner;
+                    let bTopOrder = !b.initiative && !b.hasPlayerOwner;
+
+                    if (aTopOrder != bTopOrder) {
+                        return aTopOrder ? -1 : 1;
+                    }
                 }
             }
             return wrapped(...args);
@@ -743,6 +753,11 @@ Hooks.on("updateCombat", async function (combat, delta) {
     }
 
     if (game.user.isTheGM && setting("combat-playlist") && combat.started && delta.round == 1 && delta.turn == 0) {
+        if (setting("show-combat-playlist") && $('#combat .combat-playlist-row').length) {
+            let id = $('#combat .combat-playlist-row select').val();
+            await game.settings.set("monks-combat-details", "combat-playlist", id);
+        }
+
         let currentlyPlaying = ui.playlists._playingSounds.map(ps => ps.playing ? ps.uuid : null).filter(p => !!p);
         for (let playing of currentlyPlaying) {
             let sound = await fromUuid(playing);
@@ -798,11 +813,26 @@ Hooks.on('renderCombatTracker', async (app, html, data) => {
         new Draggable(app, html, false, { resizeX: false });
     }
 
+    if (!app.popOut && game.user.isGM && data.combat && !data.combat.started && setting("show-combat-playlist")) {
+        if ($('#combat .combat-playlist-row', html).length == 0) {
+            $('<nav>')
+                .addClass('flexrow combat-playlist-row')
+                .append($("<select>")
+                    .append($('<option>').attr("value", "").html(""))
+                    .append(game.playlists.map((p) => {
+                        return $('<option>').attr("value", p.id).html(p.name);
+                    }))
+                    .val(setting("combat-playlist"))
+                )
+                .insertAfter($('#combat .encounter-controls'));
+        }
+    }
+
     if (!app.popOut && game.user.isGM && data.combat && !data.combat.started && setting('show-combat-cr') && MonksCombatDetails.xpchart != undefined) {
         //calculate CR
         let crdata = MonksCombatDetails.getCR(data.combat);
 
-        if ($('#combat-round .encounter-cr-row', html).length == 0 && data.combat.combatants.size > 0) {
+        if ($('#combat .encounter-cr-row', html).length == 0 && data.combat.combatants.size > 0) {
             let crChallenge = MonksCombatDetails.crChallenge[0];
             let epicness = '';
             let crText = '';
@@ -959,12 +989,13 @@ Hooks.on("updateCombatant", async function (combatant, data, options, userId) {
 Hooks.on("renderCombatTrackerConfig", (app, html, data) => {
     $('<div>').addClass("form-group")
         .append($('<label>').html(i18n("MonksCombatDetails.CombatPlaylist")))
-        .append($('<select>').attr("name", "combatPlaylist")
+        .append($('<div>').addClass("form-fields").append($('<select>').attr("name", "combatPlaylist")
             .append($('<option>').attr("value", "").html(""))
             .append(game.playlists.map((p) => {
                 return $('<option>').attr("value", p.id).html(p.name);
             }
-            )).val(setting("combat-playlist")))
+            )).val(setting("combat-playlist"))))
+        .append($('<p>').addClass("notes").html(i18n("MonksCombatDetails.CombatPlaylistHint")))
         .insertAfter($('select[name="combatTheme"]', html).closest(".form-group"));
 
     $('<div>').addClass("form-group")

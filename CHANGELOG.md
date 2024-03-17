@@ -1,3 +1,9 @@
+# version 11.15
+
+Fixed combat initiative for GM for NPCs that havn't rolled initiative.
+
+Added the option to set the combat playlist when creating the combat
+
 # version 11.14
 
 Fixed issue with switching to the chat tab when combat starts

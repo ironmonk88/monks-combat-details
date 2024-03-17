@@ -8,6 +8,16 @@
     background-color: rgba(255, 255, 255, 0.4);
 }
 
+.combat-playlist-row {
+    padding: 2px;
+}
+
+.combat-playlist-row select {
+    font-size: var(--font-size-14);
+    border: transparent;
+    background-color: var(--color-bg-option);
+}
+
 .encounter-cr-row {
     line-height: 25px;
 }
