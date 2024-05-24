@@ -92,6 +92,16 @@ export const registerSettings = function () {
 		default: "true",
 		type: String,
 	});
+
+	game.settings.register(modulename, "placeholder-initiative", {
+		name: i18n("MonksCombatDetails.placeholder-initiative.name"),
+		hint: i18n("MonksCombatDetails.placeholder-initiative.hint"),
+		scope: "world",
+		config: true,
+		default: CONFIG.Combat?.initiative?.formula,
+		type: String,
+	});
+
 	game.settings.register(modulename, "show-combat-playlist", {
 		name: i18n("MonksCombatDetails.show-combat-playlist.name"),
 		hint: i18n("MonksCombatDetails.show-combat-playlist.hint"),

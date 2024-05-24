@@ -138,12 +138,20 @@ body.dark-theme.system-sw5e #chat-log .message.round-marker .message-header .cha
     background-image: none;
 }
 
-#chat-log .message.round-marker .message-header .message-delete {
+body.system-dnd5e #chat-log .message.round-marker .message-header .message-metadata {
+    margin-top: 10px;
+    line-height: 2px;
+    color: var(--color-text-dark-secondary);
+}
+
+#chat-log .message.round-marker .message-header .message-delete,
+body.system-dnd5e #chat-log .message.round-marker .message-header .chat-control i {
     color: var(--color-text-dark-secondary);
     margin-right: 5px;
 }
 
-#chat-log .message.round-marker .message-header .message-delete:hover {
+#chat-log .message.round-marker .message-header .message-delete:hover,
+body.system-dnd5e #chat-log .message.round-marker .message-header .chat-control i:hover {
     color: var(--stat-font);
 }
 
@@ -195,4 +203,8 @@ body.dark-theme.system-sw5e #chat-log .message.round-marker .message-header .cha
     border-top: 2px groove var(--color-border-dark-4);
     padding-top: 4px;
     text-align: center;
+}
+
+li.combatant.placeholder .combatant-controls > *:not([data-control="toggleHidden"]) {
+    display: none;
 }

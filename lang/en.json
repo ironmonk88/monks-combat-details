@@ -88,6 +88,8 @@
 	"MonksCombatDetails.order-initiative.hint": "Order the initiative list so that a player's unrolled character is at the top for them",
 	"MonksCombatDetails.show-combat-playlist.name": "Show Combat Playlist",
 	"MonksCombatDetails.show-combat-playlist.hint": "Show a dropdown for the combat playlist when setting up combat",
+	"MonksCombatDetails.placeholder-initiative.name": "Placeholder Initiative",
+	"MonksCombatDetails.placeholder-initiative.hint": "Roll Formula to use when determining the placeholder initiative",
 
 	"MonksCombatDetails.Round": "Round",
 	"MonksCombatDetails.RoundEnd": "Round End",

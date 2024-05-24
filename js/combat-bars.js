@@ -28,7 +28,7 @@ export class CombatBars {
             let displayBars = $('[name="displayBars"]', html).parents('div.form-group');
             let combatBars = displayBars.clone(true);
 
-            let value = (app.object instanceof TokenDocument ? app.object.getFlag('monks-combat-details', 'displayBarsCombat') : getProperty(app.object.token, "flags.monks-combat-details.displayBarsCombat"));
+            let value = (app.object instanceof TokenDocument ? app.object.getFlag('monks-combat-details', 'displayBarsCombat') : getProperty(app.object.token, "flags.monks-combat-details.displayBarsCombat") ?? getProperty(app.object, "flags.monks-combat-details.displayBarsCombat"));
 
             $('[name="displayBars"]', combatBars).attr('name', 'flags.monks-combat-details.displayBarsCombat').prepend($('<option>').attr('value', '-1').html('')).val(value);
             $('> label', combatBars).html(i18n("MonksCombatDetails.CombatDisplayBars"));

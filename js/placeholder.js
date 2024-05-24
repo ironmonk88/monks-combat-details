@@ -12,7 +12,8 @@ export class PlaceholderCombatant {
             if (app.viewed?.combatants) {
                 for (let combatant of app.viewed?.combatants) {
                     if (combatant.getFlag("monks-combat-details", "placeholder")) {
-                        $(`.combatant[data-combatant-id="${combatant.id}"] .combatant-controls > *:not([data-control="toggleHidden"])`, html).remove();
+                        $(`.combatant[data-combatant-id="${combatant.id}"]`).addClass("placeholder");
+                        //$(`.combatant[data-combatant-id="${combatant.id}"] .combatant-controls > *:not([data-control="toggleHidden"])`, html).remove();
                     }
                 }
             }
@@ -45,7 +46,9 @@ export class PlaceholderCombatant {
 
         let CombatantInitiative = function (wrapped, ...args) {
             if (this.getFlag("monks-combat-details", "placeholder")) {
-                return new CONFIG.Dice.D20Roll("1d20", {});
+                let formula = String(setting("placeholder-initiative") || CONFIG.Combat.initiative.formula || game.system.initiative);
+                const rollData = this.actor?.getRollData() || {};
+                return Roll.create(formula, rollData);
             }
             return wrapped(...args);
         }

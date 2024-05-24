@@ -1,3 +1,17 @@
+# version 11.16
+
+Fixed issues with the combat round message in DnD5e
+
+Fixed compatibility issues with Combat Tracker Extensions
+
+Fixed issues with combat bar data not being shown on the prototype token dialog
+
+Fixed issues with the placeholder rolling initiative
+
+Added a setting to allow for custom initiative rolling for a placeholder
+
+Fixed issues with some systems that weren't getting combat data properly crashing the combat popup.
+
 # version 11.15
 
 Fixed combat initiative for GM for NPCs that havn't rolled initiative.

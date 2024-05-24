@@ -274,7 +274,7 @@ export class MonksCombatDetails {
         }
 
         patchFunc("CombatTracker.prototype.getData", async function (wrapped, ...args) {
-            if (this.popOut)
+            if (this.popOut && args.length)
                 args[0].resizable = true;
             return wrapped(...args);
         });
