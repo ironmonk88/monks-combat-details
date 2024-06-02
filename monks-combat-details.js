@@ -190,7 +190,7 @@ export class MonksCombatDetails {
             return wrapped(...args);
         });
 
-        let combatStart = async function (wrapped, ...args) {
+        patchFunc("Combat.prototype.startCombat", async function (wrapped, ...args) {
             if (setting("prevent-initiative") && this.turns.find(c => c.initiative == undefined) != undefined) {
                 return await Dialog.confirm({
                     title: i18n("MonksCombatDetails.NotAllInitTitle"),
@@ -206,16 +206,7 @@ export class MonksCombatDetails {
                 //    ui.sidebar.activateTab("chat");
                 return wrapped.call(this);
             }
-        }
-
-        if (game.modules.get("lib-wrapper")?.active) {
-            libWrapper.register("monks-combat-details", "Combat.prototype.startCombat", combatStart, "MIXED");
-        } else {
-            const oldStartCombat = Combat.prototype.startCombat;
-            Combat.prototype.startCombat = function () {
-                return combatStart.call(this, oldStartCombat.bind(this), ...arguments);
-            }
-        }
+        }, "MIXED");
 
         patchFunc("Combat.prototype.rollInitiative", async function (wrapped, ...args) {
             let [ids, options] = args;
@@ -231,28 +222,29 @@ export class MonksCombatDetails {
                 });
 
                 if (hiddenIds.length > 0) {
-                    await wrapped.call(this, hiddenIds, mergeObject(duplicate(options), { messageOptions: { rollMode: "selfroll" } }));
+                    await wrapped.call(this, hiddenIds, foundry.utils.mergeObject(foundry.utils.duplicate(options), { messageOptions: { rollMode: "selfroll" } }));
                 }
             }
             return wrapped.call(this, ids, options);
         })
 
         if (game.settings.get("monks-combat-details", "prevent-token-removal")) {
-            let oldToggleCombat = TokenHUD.prototype._onToggleCombat;
-            TokenHUD.prototype._onToggleCombat = function (event) {
-                if (this.object.inCombat) {
+            patchFunc("TokenHUD.prototype._onClickControl", function (wrapped, ...args) {
+                let [event] = args;
+                const button = event.currentTarget;
+                if (button.dataset.action == "combat" && this.object.inCombat) {
                     ui.notifications.warn(i18n("MonksCombatDetails.PreventTokenMessage"));
                     event.preventDefault();
                     return false;
                 } else {
-                    return oldToggleCombat.call(this, event);
+                    return wrapped(...args);
                 }
-            }
+            }, "MIXED");
         }
 
         let isVisible = function() {
             if (this.hidden) return this.isOwner;
-            if ((setting('hide-enemies') && !this.combat.started) || (setting("hide-until-turn") && this.combat.started && getProperty(this, "flags.monks-combat-details.reveal") !== true)) {
+            if ((setting('hide-enemies') && !this.combat.started) || (setting("hide-until-turn") && this.combat.started && foundry.utils.getProperty(this, "flags.monks-combat-details.reveal") !== true)) {
                 if (this.combat && !game.user.isGM) {
                     let idx = this.combat.turns.findIndex(t => t.id == this.id);
                     return this.hasPlayerOwner || (this.combat.started && (this.combat.round > 1 || !setting("hide-until-turn") || this.combat.turn >= idx));
@@ -280,7 +272,8 @@ export class MonksCombatDetails {
         });
 
         patchFunc("Combat.prototype._sortCombatants", function (wrapped, ...args) {
-            if (setting("order-initiative")) {
+            let combatants = args;
+            if (combatants.length && setting("order-initiative") && !combatants[0].combat.started) {
                 if (!game.user.isGM) {
                     let [a, b] = args;
                     let aTopOrder = !a.initiative && a.isOwner;
@@ -337,6 +330,10 @@ export class MonksCombatDetails {
         MonksCombatDetails.checkPopout(game.combats.active);
     }
 
+    static isDefeated(token) {
+        return (token && (token.combatant && token.combatant?.defeated) || !!token.actor?.statuses.has(CONFIG.specialStatusEffects.DEFEATED));
+    }
+
     static async transferSettings() {
         let swapFilename = function (value, name) {
             if (value && (name === "next-sound" || name === "turn-sound" || name === "round-sound")) {
@@ -377,15 +374,15 @@ export class MonksCombatDetails {
 
         for (let scene of game.scenes) {
             for (let token of scene.tokens) {
-                if (getProperty(token, "flags.monks-little-details.displayBarsCombat")) {
-                    await token.update({ "flags.monks-combat-details.displayBarsCombat": getProperty(token, "flags.monks-little-details.displayBarsCombat") });
+                if (foundry.utils.getProperty(token, "flags.monks-little-details.displayBarsCombat")) {
+                    await token.update({ "flags.monks-combat-details.displayBarsCombat": foundry.utils.getProperty(token, "flags.monks-little-details.displayBarsCombat") });
                 }
             }
         }
 
         for (let actor of game.actors) {
-            if (getProperty(actor.prototypeToken, "flags.monks-little-details.displayBarsCombat")) {
-                await actor.prototypeToken.update({ "flags.monks-combat-details.displayBarsCombat": getProperty(actor.prototypeToken, "flags.monks-little-details.displayBarsCombat") });
+            if (foundry.utils.getProperty(actor.prototypeToken, "flags.monks-little-details.displayBarsCombat")) {
+                await actor.prototypeToken.update({ "flags.monks-combat-details.displayBarsCombat": foundry.utils.getProperty(actor.prototypeToken, "flags.monks-little-details.displayBarsCombat") });
             }
         }
 
@@ -530,7 +527,7 @@ export class MonksCombatDetails {
                                 levels = combatant.actor.system?.classes?.reduce(c => { return c.levels; });
                             else if (combatant?.actor.system.details?.level?.value)
                                 levels = parseInt(combatant?.actor.system.details?.level?.value);
-                            combatantxp = MonksCombatDetails.xpchart[Math.clamped(levels, 0, MonksCombatDetails.xpchart.length - 1)];
+                            combatantxp = MonksCombatDetails.xpchart[Math.clamp(levels, 0, MonksCombatDetails.xpchart.length - 1)];
                         }
                         xp += (combatantxp || 0);
                     }
@@ -542,7 +539,7 @@ export class MonksCombatDetails {
                 calcAPL = Math.round(apl.levels / apl.count) + (apl.count < 4 ? -1 : (apl.count > 5 ? 1 : 0));
 
             //get the CR of any unfriendly/neutral
-            let cr = Math.clamped(MonksCombatDetails.xpchart.findIndex(cr => cr > xp) - 1, 0, MonksCombatDetails.xpchart.length - 1);
+            let cr = Math.clamp(MonksCombatDetails.xpchart.findIndex(cr => cr > xp) - 1, 0, MonksCombatDetails.xpchart.length - 1);
 
             return { cr: cr, apl: calcAPL, count: apl.count };
         }
@@ -599,14 +596,10 @@ export class MonksCombatDetails {
             let actor = game.actors.find(a => a.id == data.actor);
             ChatMessage.create({
                 user: game.user,
-                content: `<i>${player?.name}</i> ${setting("prevent-combat-spells") == "both" ? 'attempted to change' : 'has changed'} prepared spells (${data.name.join(", ")}) for <b>${actor?.name}</b> while token is in combat.`,
+                content: `<i>${player?.name}</i> ${setting("prevent-combat-spells") == "both" ? 'attempted to change' : 'has changed'} prepared spells: <br/><br/> ${data.name} <br/><br/> For <b>${actor?.name}</b> while in combat.`,
                 whisper: whisper
             });
         }
-    }
-
-    static isDefeated(token) {
-        return (token && (token.combatant && token.combatant.defeated) || token.actor?.statuses.has(CONFIG.specialStatusEffects.DEFEATED) || token.document.overlayEffect == CONFIG.controlIcons.defeated);
     }
 
     static async AutoDefeated(hp, actor, token) {
@@ -772,7 +765,7 @@ Hooks.on("updateCombat", async function (combat, delta) {
     }
 
     if (game.user.isGM && setting("show-combatant-sheet") && delta.turn != undefined) {
-        if (!combat.combatant.actor.hasPlayerOwner) {
+        if (!combat.combatant.actor?.hasPlayerOwner) {
             if (!MonksCombatDetails.combatantSheet || MonksCombatDetails.combatantSheet.state == -1) {
                 MonksCombatDetails.combatantSheet = combat.combatant.actor.sheet.render(true);
             } else {
@@ -823,6 +816,10 @@ Hooks.on('renderCombatTracker', async (app, html, data) => {
                         return $('<option>').attr("value", p.id).html(p.name);
                     }))
                     .val(setting("combat-playlist"))
+                    .on("change", async function (event) {
+                        let id = $(event.currentTarget).val();
+                        await game.settings.set("monks-combat-details", "combat-playlist", id);
+                    })
                 )
                 .insertAfter($('#combat .encounter-controls'));
         }
@@ -837,13 +834,13 @@ Hooks.on('renderCombatTracker', async (app, html, data) => {
             let epicness = '';
             let crText = '';
             if (game.system.id == 'pf2e') {
-                crChallenge = MonksCombatDetails.crChallenge[Math.clamped(crdata.cr, 1, MonksCombatDetails.crChallenge.length - 1)];
+                crChallenge = MonksCombatDetails.crChallenge[Math.clamp(crdata.cr, 1, MonksCombatDetails.crChallenge.length - 1)];
                 crText = 'XP Bud.: ' + crdata.xp;
             }
             else {
                 if (crdata.count > 0)
-                    crChallenge = MonksCombatDetails.crChallenge[Math.clamped(crdata.cr - crdata.apl, 0, MonksCombatDetails.crChallenge.length - 1)];
-                epicness = crChallenge.rating == "unknown" ? 0 : Math.clamped((crdata.cr - crdata.apl - 3), 0, 5);
+                    crChallenge = MonksCombatDetails.crChallenge[Math.clamp(crdata.cr - crdata.apl, 0, MonksCombatDetails.crChallenge.length - 1)];
+                epicness = crChallenge.rating == "unknown" ? 0 : Math.clamp((crdata.cr - crdata.apl - 3), 0, 5);
                 crText = 'CR: ' + MonksCombatDetails.getCRText(crdata.cr);
             }
 
@@ -917,36 +914,28 @@ Hooks.on("renderSettingsConfig", (app, html, data) => {
     $('<div>').addClass('form-group group-header').html(i18n("MonksCombatDetails.CombatTurn")).insertBefore($('[name="monks-combat-details.shownextup"]').parents('div.form-group:first'));
 });
 
-Hooks.on("preUpdateActor", async function (document, data, options, userid) {
-    let hp = getProperty(data, 'system.attributes.hp.value');
+Hooks.on("preUpdateActor", function (document, data, options, userid) {
+    let hp = foundry.utils.getProperty(data, 'system.attributes.hp.value');
     if (game.system.id == "cyberpunk-red-core")
-        hp = getProperty(data, 'system.derivedStats.hp.value');
+        hp = foundry.utils.getProperty(data, 'system.derivedStats.hp.value');
     MonksCombatDetails.AutoDefeated(hp, document, document.token);
 
-    if (setting("prevent-combat-spells") != "false" && !game.user.isGM && userid == game.user.id && getProperty(data, "system.spells") != undefined) {
-        if (document._castingSpell) return;
+});
+
+Hooks.on("preUpdateItem", function(document, data, options, userid) {
+    if (setting("prevent-combat-spells") != "false" && !game.user.isGM && userid == game.user.id && document.type == "spell" && document.actor && foundry.utils.getProperty(data, "system.preparation") != undefined) {
+        if (document.actor._castingSpell) return;
 
         //Is this actor involved in a combat
-        if (document.inCombat) {
-            let spells = getProperty(data, "system.spells");
-            let notify = false;
-            let changes = [];
-            for (let spellId of Object.keys(spells).filter(k => k.startsWith("spell") || k.startsWith("pact"))) {
-                if (spellId) {
-                    if (setting("prevent-combat-spells") == "prevent" || setting("prevent-combat-spells") == "both") {
-                        notify = true;
-                        delete data.system.spells[spellId];
-                    }
-                    if (setting("prevent-combat-spells") == "true" || setting("prevent-combat-spells") == "both") {
-                        let level = parseInt(spellId.replace("spell", ""));
-                        changes.push(spellId == "pact" ? "Pact Magic" : `Spell Level: ${level}`);
-                    }
-                }
-            }
-            if (notify)
+        if (document.actor.inCombat) {
+            if (setting("prevent-combat-spells") == "prevent" || setting("prevent-combat-spells") == "both") {
                 ui.notifications.warn(i18n("MonksCombatDetails.CantChangeSpells"));
-            if (changes.length > 0)
-                MonksCombatDetails.emit('spellChange', { user: game.user.id, actor: document.id, name: changes });
+                delete data.system.preparation;
+            }
+            if (setting("prevent-combat-spells") == "true" || setting("prevent-combat-spells") == "both") {
+                let name = `Spell Level: ${document.system.level}, ${document.name}`;
+                MonksCombatDetails.emit('spellChange', { user: game.user.id, actor: document.actor.id, name });
+            }
         }
     }
 });
@@ -971,12 +960,12 @@ Hooks.on("updateCombatant", async function (combatant, data, options, userId) {
         let t = combatant.token
         const a = combatant.token?.actor;
 
-        let status = CONFIG.statusEffects.find(e => e.id === CONFIG.specialStatusEffects.DEFEATED);
-        let effect = a && status ? status : CONFIG.controlIcons.defeated;
-        const exists = (effect.icon == undefined ? (t.overlayEffect == effect) : (a?.statuses.has(effect.id)));
-        if (exists != data.defeated) {
-            await t.object.toggleEffect(effect, { overlay: true, active: data.defeated });
-            t.object.refresh();
+        if (a) {
+            let effect = CONFIG.statusEffects.find(e => e.id === CONFIG.specialStatusEffects.DEFEATED) || CONFIG.controlIcons.defeated;
+            const exists = a.statuses.has(effect?.id);
+            if (exists != data.defeated) {
+                await a.toggleStatusEffect(effect, { active: data.defeated });
+            }
         }
     }
 
@@ -996,7 +985,7 @@ Hooks.on("renderCombatTrackerConfig", (app, html, data) => {
             }
             )).val(setting("combat-playlist"))))
         .append($('<p>').addClass("notes").html(i18n("MonksCombatDetails.CombatPlaylistHint")))
-        .insertAfter($('select[name="combatTheme"]', html).closest(".form-group"));
+        .insertAfter($('select[name="core.combatTheme"]', html).closest(".form-group"));
 
     $('<div>').addClass("form-group")
         .append($('<label>').html(i18n("MonksCombatDetails.HideDefeated")))
@@ -1060,6 +1049,11 @@ Hooks.on('dragEndCombatTracker', (app, position) => {
 Hooks.on('updateCombat', (combat, data, options, user) => {
     if (ui.sidebar.activeTab == "combat" && setting("switch-chat-tab") && data.round == 1 && combat.started)
         ui.sidebar.activateTab("chat");
+
+    // Update the combat tracker if the order initiative is set to put player characters first
+    if (data.round == 1 && combat.started && setting("order-initiative")) {
+        combat.setupTurns();
+    }
 });
 
 Hooks.on("setupTileActions", (app) => {

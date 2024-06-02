@@ -1,3 +1,7 @@
+# version 12.01
+
+v12 Compatibility
+
 # version 11.16
 
 Fixed issues with the combat round message in DnD5e

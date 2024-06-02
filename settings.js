@@ -447,7 +447,7 @@ export const registerSettings = function () {
 		config: true,
 		default: "modules/monks-combat-details/sounds/next.ogg",
 		type: String,
-		//filePicker: 'audio',
+		filePicker: 'audio',
 	});
 	game.settings.register(modulename, "turn-sound", {
 		name: i18n("MonksCombatDetails.turn-sound.name"),
@@ -456,7 +456,7 @@ export const registerSettings = function () {
 		config: true,
 		default: "modules/monks-combat-details/sounds/turn.ogg",
 		type: String,
-		//filePicker: 'audio',
+		filePicker: 'audio',
 	});
 	game.settings.register(modulename, "round-sound", {
 		name: i18n("MonksCombatDetails.round-sound.name"),
@@ -465,7 +465,7 @@ export const registerSettings = function () {
 		config: true,
 		default: "modules/monks-combat-details/sounds/round.ogg",
 		type: String,
-		//filePicker: 'audio',
+		filePicker: 'audio',
 	});
 	game.settings.register(modulename, "volume", {
 		name: i18n("MonksCombatDetails.volume.name"),

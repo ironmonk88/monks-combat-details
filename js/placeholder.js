@@ -121,7 +121,7 @@ export class PlaceholderCombatantConfig extends CombatantConfig {
     }
 
     static get defaultOptions() {
-        return mergeObject(super.defaultOptions, {
+        return foundry.utils.mergeObject(super.defaultOptions, {
             id: "placeholder-combatant-form",
         });
     }

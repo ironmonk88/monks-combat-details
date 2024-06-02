@@ -124,7 +124,7 @@ export class CombatTurn {
                         let token = canvas.tokens.get(id);
                         if (token
                             && !token.hidden
-                            && !((token?.combatant && token?.combatant.defeated) || token.actor?.statuses.has(CONFIG.specialStatusEffects.DEFEATED) || token.document.overlayEffect == CONFIG.controlIcons.defeated))
+                            && !(MonksCombatDetails.isDefeated(token)))
                             token.setTarget(true, { user: game.user, releaseOthers: false, groupSelection: false });
                     }
                 }
@@ -201,7 +201,9 @@ export class CombatTurn {
                 && !MonksCombatDetails.isDefeated(document._object))
             {
                 let shadow = CombatTurn.shadows[document.id];
-                if (shadow && document.x == shadow._startX && document.y == shadow._startY) {
+                let x = update.x ?? document.x;
+                let y = update.y ?? document.y;
+                if (shadow && x == shadow._startX && y == shadow._startY) {
                     CombatTurn.removeShadow(document.id);
                     MonksCombatDetails.emit('removeShadow', { id: document.id });
                 }
@@ -224,21 +226,23 @@ export class CombatTurn {
         //create a shadow
         if (token.document.hidden && !game.user.isGM) return;
 
-        let shadow = new PIXI.Container();
-        canvas.grid.shadows.addChild(shadow);
-        let colorMatrix = new PIXI.filters.ColorMatrixFilter();
-        colorMatrix.sepia(0.6);
-        shadow.filters = [colorMatrix];
-        shadow.x = x + (token.w / 2);
-        shadow.y = y + (token.h / 2);
-        shadow.alpha = 0.5;
-        shadow.angle = token.document.rotation;
-
         let width = token.w * token.document.texture.scaleX;
         let height = token.h * token.document.texture.scaleY;
 
+        let shadow = new PIXI.Container();
+        canvas.regions.shadows.addChild(shadow);
+        let colorMatrix = new PIXI.ColorMatrixFilter();
+        colorMatrix.sepia(0.8);
+        shadow.filters = [colorMatrix];
+        shadow.x = x + (token.w / 2);
+        shadow.y = y + (token.h / 2);
+        shadow.alpha = 0.3;
+        shadow.angle = token.document.rotation;
+
         let tokenImage = await loadTexture(token.document.texture.src || "icons/svg/mystery-man.svg")
         let sprite = new PIXI.Sprite(tokenImage)
+        
+        //sprite.filters = [radialFadeFilter];
         sprite.x = -(token.w / 2) - (width - token.w) / 2;
         sprite.y = -(token.h / 2) - (height - token.h) / 2;
         if (token.mirrorX) {
@@ -401,12 +405,12 @@ export class CombatTurn {
             const audiofile = audiofiles[Math.floor(Math.random() * audiofiles.length)];
 
             let volume = (setting('volume') / 100) * getVolume();
-            AudioHelper.play({ src: audiofile, volume: volume }).then((sound) => {
+            foundry.audio.AudioHelper.play({ src: audiofile, volume: volume }).then((sound) => {
                 combat.turnsound = sound;
-                combat.turnsound.on("stop", () => {
+                combat.turnsound.addEventListener("stop", () => {
                     delete combat.turnsound;
                 });
-                combat.turnsound.on("end", () => {
+                combat.turnsound.addEventListener("end", () => {
                     delete combat.turnsound;
                 });
                 combat.turnsound.effectiveVolume = volume;
@@ -445,8 +449,8 @@ export class CombatTurn {
     }
 }
 
-Hooks.on("drawGridLayer", function (layer) {
-    layer.shadows = layer.addChildAt(new PIXI.Container(), layer.getChildIndex(layer.borders));
+Hooks.on("drawRegionLayer", function (layer) {
+    layer.shadows = layer.addChildAt(new PIXI.Container(), layer.children.length - 1);
 });
 
 Hooks.on("globalAmbientVolumeChanged", (volume) => {

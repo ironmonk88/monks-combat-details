@@ -17,6 +17,9 @@ When a combat is created, Monk's Combat Details can automatically switch you to 
 
 You can also have the current creature on the combat tracker always displayed.  So if you have a long list of combatants, Monk's Combat Details will scroll the view so that they're in view.
 
+### Combat initiative ordering
+You have the option for player characters to be sorted to the top of the list for them when they need to roll initiative.  That way they're not chasing their token around when trying to roll initiative while other combatants have finished rolling and have altered the initiative order.
+
 ### Strict combat requirements
 Monk's Combat Details will warn you if you attempt to start a combat when not all tokens have rolled initiave.  You can always choose to ignore this message but it will prevent last minute corrctions of initiative.
 
@@ -40,6 +43,9 @@ Display the calculated CR of the Encounter.  This should give you a clue if the 
 
 ![monks-combat-details](/screenshots/ShowCombatCR.webp)
 
+### Combat Playlist
+You can turn on the option to select a playlist while creating a combat that will automatically start playing the playlist when combat begins, and will swap back to whatever playlist you had playing before combat started when the combat ends.  This way you can set a playlist of your favorite combat music to automatically play for combats only.
+
 ### Combat Turn automation
 After your turn is over, you can have your current target removed.  This prevents you from accidentally applying effects to the last target.  Monk's Combat Details will remember the last target you picked on your turn though and can re-target the token once you have your turn again.
 
@@ -47,15 +53,23 @@ For the GM you can have the current combatant automatically selected once it has
 
 And you can also have the screen pan to the controlled token when your turn starts, in case you forgot where it was.
 
+You can also set in the combat setting the option to reroll initiative avery round.
+
 ### Show starting location
-Monk's Combat Details will show an icon fromt he starting position of the token who moved in combat.  This way you're not left wondering where your starting square in case you moved the token, but changed your mind.
+Monk's Combat Details will show an icon from the starting position of the token who moved in combat.  This way you're not left wondering where your starting square in case you moved the token, but changed your mind.
 
 ![monks-combat-details](/screenshots/PreviousPosition.gif)
 
 ### Combat Round Message
-When the round changes, display a message int he chat window.  That way if you are trackign how long an effect last you can easily count how many rounds it's been since it was started.
+When the round changes, display a message in the chat window.  That way if you are trackign how long an effect last you can easily count how many rounds it's been since it was started.
 
 ![monks-combat-details](/screenshots/CombatRound.png)
+
+### Placeholders
+You have the option to add a placeholder in combat, in case you need to keep track of a temporary effect, spell, lair action or non-combatant.  It's just an easy way to remind yourself to do something when combat reaches a certain turn order.
+
+### Combatant sheet
+You can turn on the option to automatically open the current combatants character sheet.  As a GM this means insetad of looking for the character sheet, it can automatically be opened for you to refresh your memory on what a creature does.
 
 ## Monk's Little Details
 

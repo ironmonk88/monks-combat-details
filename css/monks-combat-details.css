@@ -15,7 +15,7 @@
 .combat-playlist-row select {
     font-size: var(--font-size-14);
     border: transparent;
-    background-color: var(--color-bg-option);
+    background-color: var(--color-select-option-bg);
 }
 
 .encounter-cr-row {

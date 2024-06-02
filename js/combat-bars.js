@@ -1,4 +1,4 @@
-import { MonksCombatDetails, i18n, log, setting } from "../monks-combat-details.js";
+import { MonksCombatDetails, i18n, log, setting, patchFunc } from "../monks-combat-details.js";
 
 export class CombatBars {
     static init() {
@@ -28,7 +28,7 @@ export class CombatBars {
             let displayBars = $('[name="displayBars"]', html).parents('div.form-group');
             let combatBars = displayBars.clone(true);
 
-            let value = (app.object instanceof TokenDocument ? app.object.getFlag('monks-combat-details', 'displayBarsCombat') : getProperty(app.object.token, "flags.monks-combat-details.displayBarsCombat") ?? getProperty(app.object, "flags.monks-combat-details.displayBarsCombat"));
+            let value = (app.object instanceof TokenDocument ? app.object.getFlag('monks-combat-details', 'displayBarsCombat') : foundry.utils.getProperty(app.object.token, "flags.monks-combat-details.displayBarsCombat") ?? getProperty(app.object, "flags.monks-combat-details.displayBarsCombat"));
 
             $('[name="displayBars"]', combatBars).attr('name', 'flags.monks-combat-details.displayBarsCombat').prepend($('<option>').attr('value', '-1').html('')).val(value);
             $('> label', combatBars).html(i18n("MonksCombatDetails.CombatDisplayBars"));
@@ -76,25 +76,16 @@ export class CombatBars {
             }
         });
 
-        let tokenDrawBars = function (wrapped, ...args) {
+        patchFunc("Token.prototype.drawBars", function (wrapped, ...args) {
             if (this.inCombat && this.document.displayBars === CONST.TOKEN_DISPLAY_MODES.NONE && this.document.flags['monks-combat-details']?.displayBarsCombat !== CONST.TOKEN_DISPLAY_MODES.NONE) {
                 this.document.displayBars = 5;
                 wrapped.call(this, ...args);
                 this.document.displayBars = CONST.TOKEN_DISPLAY_MODES.NONE;
             } else
                 wrapped.call(this, ...args);
-        }
+        });
 
-        if (game.modules.get("lib-wrapper")?.active) {
-            libWrapper.register("monks-combat-details", "Token.prototype.drawBars", tokenDrawBars, "WRAPPER");
-        } else {
-            const oldTokenDrawBars = Token.prototype.drawBars;
-            Token.prototype.drawBars = function () {
-                return tokenDrawBars.call(this, oldTokenDrawBars.bind(this), ...arguments);
-            }
-        }
-
-        let tokenRefreshHUD = function (wrapped, ...args) {
+        patchFunc("Token.prototype.refreshHUD", function (wrapped, ...args) {
             wrapped.call(this, ...args);
             if (this.inCombat) {
                 let combatBar = this.document.getFlag('monks-combat-details', 'displayBarsCombat');
@@ -102,16 +93,7 @@ export class CombatBars {
                     this.bars.visible = CombatBars.canViewCombatMode.call(this, combatBar);
                 }
             }
-        }
-
-        if (game.modules.get("lib-wrapper")?.active) {
-            libWrapper.register("monks-combat-details", "Token.prototype.refreshHUD", tokenRefreshHUD, "WRAPPER");
-        } else {
-            const oldTokenRefreshHUD = Token.prototype.refreshHUD;
-            Token.prototype.refreshHUD = function () {
-                return tokenRefreshHUD.call(this, oldTokenRefreshHUD.bind(this), ...arguments);
-            }
-        }
+        });
     }
 
     static canViewCombatMode(mode) {
