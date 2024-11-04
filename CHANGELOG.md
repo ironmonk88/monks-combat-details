@@ -1,3 +1,17 @@
+# version 12.02
+
+Fixing issues where combatant is deselected when remembering last target
+
+Adding default placeholder image
+
+Added the option to show the combat CR while the combat is in progress
+
+Fixed issue when changing the dead to invisible, it's no longer tied with the auto defeated setting.
+
+Fixed issue with not showing the combatant sheet when there's only one enemy in the combat.
+
+Fixed issue with setting the defeated effect
+
 # version 12.01
 
 v12 Compatibility

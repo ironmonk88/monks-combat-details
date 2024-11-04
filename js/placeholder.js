@@ -72,6 +72,7 @@ export class PlaceholderCombatant {
 
     static addPlaceholder(app) {
         let combatant = new Combatant();
+        combatant.img = setting("placeholder-image");
         delete combatant._id;
         if (app.viewed?.started && app.viewed?.combatant?.initiative) {
             combatant.initiative = app.viewed.combatant?.initiative - 1;

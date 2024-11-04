@@ -102,6 +102,16 @@ export const registerSettings = function () {
 		type: String,
 	});
 
+	game.settings.register(modulename, "placeholder-image", {
+		name: i18n("MonksCombatDetails.placeholder-image.name"),
+        hint: i18n("MonksCombatDetails.placeholder-image.hint"),
+        scope: "world",
+        config: true,
+		default: "icons/svg/mystery-man.svg",
+		type: String,
+		filePicker: 'image'
+    });
+
 	game.settings.register(modulename, "show-combat-playlist", {
 		name: i18n("MonksCombatDetails.show-combat-playlist.name"),
 		hint: i18n("MonksCombatDetails.show-combat-playlist.hint"),
@@ -120,6 +130,14 @@ export const registerSettings = function () {
 		scope: "world",
 		config: MonksCombatDetails.canDo("show-combat-cr"),
 		default: game.system.id != "pf2e",
+		type: Boolean,
+	});
+	game.settings.register(modulename, "show-combat-cr-in-combat", {
+		name: i18n("MonksCombatDetails.show-combat-cr-in-combat.name"),
+		hint: i18n("MonksCombatDetails.show-combat-cr-in-combat.hint"),
+		scope: "world",
+		config: MonksCombatDetails.canDo("show-combat-cr"),
+		default: false,
 		type: Boolean,
 	});
 	game.settings.register(modulename, "combat-alert", {

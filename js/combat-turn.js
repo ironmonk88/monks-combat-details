@@ -85,14 +85,6 @@ export class CombatTurn {
                 if (previous?.isOwner) {
                     //clear the targets
                     game.user.targets.forEach(t => t.setTarget(false, { user: game.user, releaseOthers: true, groupSelection: false }));
-
-                    canvas.tokens.selectObjects({
-                        x: 0,
-                        y: 0,
-                        height: 0,
-                        releaseOptions: {},
-                        controlOptions: { releaseOthers: true, updateSight: true }
-                    });
                 }
             }
 

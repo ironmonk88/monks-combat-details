@@ -142,6 +142,7 @@ export class MonksCombatDetails {
 
         patchFunc("CombatTrackerConfig.prototype._updateObject", async (wrapped, ...args) => {
             let [event, formData] = args;
+            game.settings.set("monks-combat-details", "show-combat-cr-in-combat", formData.showCombatCR);
             game.settings.set("monks-combat-details", "hide-defeated", formData.hideDefeated);
             game.settings.set("monks-combat-details", "reroll-initiative", formData.rerollInitiative);
             if (formData.combatPlaylist != setting("combat-playlist")) {
@@ -604,7 +605,7 @@ export class MonksCombatDetails {
 
     static async AutoDefeated(hp, actor, token) {
         if (setting('auto-defeated') != 'none' && game.user.isGM) {
-            token = token || game.combats?.viewed?.combatants.find(c => c.actor.id == actor.id)?.token;
+            token = token || game.combats?.viewed?.combatants.find(c => c.actor?.id == actor.id)?.token;
             if (hp != undefined && (setting('auto-defeated').startsWith('all') || token?.disposition != 1)) {
                 let combatant = token?.combatant;
 
@@ -614,9 +615,6 @@ export class MonksCombatDetails {
                     await combatant.update({ defeated: defeated });
                 }
 
-                if (defeated && token && setting("invisible-dead")) {
-                    token.update({ "hidden": true });
-                }
             }
         }
 
@@ -773,8 +771,8 @@ Hooks.on("updateCombat", async function (combat, delta) {
                     delete MonksCombatDetails.combatantSheet.object.apps[MonksCombatDetails.combatantSheet.appId]
                     MonksCombatDetails.combatantSheet._state = 2;
                     MonksCombatDetails.combatantSheet.object = combat.combatant.actor;
-                    MonksCombatDetails.combatantSheet.render(true);
                 }
+                MonksCombatDetails.combatantSheet.render(true);
             }
         }
     }
@@ -825,7 +823,7 @@ Hooks.on('renderCombatTracker', async (app, html, data) => {
         }
     }
 
-    if (!app.popOut && game.user.isGM && data.combat && !data.combat.started && setting('show-combat-cr') && MonksCombatDetails.xpchart != undefined) {
+    if (!app.popOut && game.user.isGM && data.combat && (!data.combat.started || setting('show-combat-cr-in-combat')) && setting('show-combat-cr') && MonksCombatDetails.xpchart != undefined) {
         //calculate CR
         let crdata = MonksCombatDetails.getCR(data.combat);
 
@@ -922,6 +920,24 @@ Hooks.on("preUpdateActor", function (document, data, options, userid) {
 
 });
 
+Hooks.on("createActiveEffect", function (effect, options, userId) {
+    if (game.user.isGM && effect.statuses.has("dead")) {
+        let actor = effect.parent;
+        if (actor?.token && setting("invisible-dead")) {
+            actor.token.update({ "hidden": true });
+        }
+    }
+});
+
+Hooks.on("updateActiveEffect", function (effect, data, options, userId) {
+    if (game.user.isGM && effect.statuses.has("dead") && !data.disabled) {
+        let actor = effect.parent;
+        if (actor?.token && setting("invisible-dead")) {
+            actor.token.update({ "hidden": true });
+        }
+    }
+});
+
 Hooks.on("preUpdateItem", function(document, data, options, userid) {
     if (setting("prevent-combat-spells") != "false" && !game.user.isGM && userid == game.user.id && document.type == "spell" && document.actor && foundry.utils.getProperty(data, "system.preparation") != undefined) {
         if (document.actor._castingSpell) return;
@@ -962,9 +978,9 @@ Hooks.on("updateCombatant", async function (combatant, data, options, userId) {
 
         if (a) {
             let effect = CONFIG.statusEffects.find(e => e.id === CONFIG.specialStatusEffects.DEFEATED) || CONFIG.controlIcons.defeated;
-            const exists = a.statuses.has(effect?.id);
+            const exists = a.statuses.has(effect?.id ?? effect);
             if (exists != data.defeated) {
-                await a.toggleStatusEffect(effect, { active: data.defeated });
+                await a.toggleStatusEffect(effect?.id ?? effect, { active: data.defeated });
             }
         }
     }
@@ -986,6 +1002,12 @@ Hooks.on("renderCombatTrackerConfig", (app, html, data) => {
             )).val(setting("combat-playlist"))))
         .append($('<p>').addClass("notes").html(i18n("MonksCombatDetails.CombatPlaylistHint")))
         .insertAfter($('select[name="core.combatTheme"]', html).closest(".form-group"));
+
+    $('<div>').addClass("form-group")
+        .append($('<label>').html(i18n("MonksCombatDetails.ShowCombatCR")))
+        .append($('<input>').attr("type", "checkbox").attr("name", "showCombatCR").attr('data-dtype', 'Boolean').prop("checked", setting("show-combat-cr-in-combat") == true && setting("show-combat-cr") == true))
+        .append($('<p>').addClass("notes").html(i18n("MonksCombatDetails.ShowCombatCRHint")))
+        .insertAfter($('input[name="skipDefeated"]', html).closest(".form-group"));
 
     $('<div>').addClass("form-group")
         .append($('<label>').html(i18n("MonksCombatDetails.HideDefeated")))
